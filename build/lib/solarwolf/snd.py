@@ -65,10 +65,8 @@ def play(name, volume=1.0, pos=-1):
 CurrentSong = None
 CurrentVolume = 1.0
 SwitchingSongs = 0
-
 def playmusic(musicname, volume=1.0):
-    if not music or not game.music:
-        return
+    if not music or not game.music: return
     global CurrentSong, SwitchingSongs, CurrentVolume
     if musicname == CurrentSong:
         return
@@ -83,14 +81,9 @@ def playmusic(musicname, volume=1.0):
     else:
         prefvolume = [0, 0.6, 1.0][game.music]
         fullname = os.path.join('data', 'music', musicname)
-        try:
-            music.load(fullname)
-            music.play(-1)
-            music.set_volume(prefvolume*CurrentVolume)
-        except pygame.error as e:
-            print(f"Fehler beim Laden oder Abspielen der Musik: {e}")
-            pass  # Fehler ignorieren, wenn Musikdatei nicht gefunden wird
-
+        music.load(fullname)
+        music.play(-1)
+        music.set_volume(prefvolume*CurrentVolume)
 
 def finish_playmusic():
     global CurrentSong, SwitchingSongs, CurrentVolume
@@ -107,13 +100,9 @@ def tweakmusicvolume():
     if not music:
         return
     prefvolume = [0, 0.6, 1.0][game.music]
-    if prefvolume == 0:
+    if not prefvolume:
         music.stop()
-    else:
-        if not music.get_busy():
-            try:
-                music.play(-1)
-            except pygame.error as e:
-                print(f"Fehler beim Abspielen der Musik: {e}")
-                pass  # Fehler ignorieren, wenn Musik nicht geladen ist
-        music.set_volume(prefvolume*CurrentVolume)
+    if not music.get_busy():
+        music.play(-1)
+    music.set_volume(prefvolume*CurrentVolume)
+

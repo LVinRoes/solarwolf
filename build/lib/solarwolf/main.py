@@ -4,12 +4,6 @@ import pygame
 import game, gfx, snd, txt, input
 import allmodules
 import players, gamepref
-import numpy as np
-import time
-from input_analyzer import InputAnalyzer
-from music_controller import MusicController
-
-
 
 #import psyco
 
@@ -17,8 +11,6 @@ from music_controller import MusicController
 #be imported, so they can be initialized at the
 #start of main()
 
-last_update_time = time.time()
-update_interval = 0.5  # in Sekunden
 
 
 def main(args):
@@ -28,49 +20,10 @@ def main(args):
         print('Keyboard Interrupt...')
         print('Exiting')
 
-def calculate_intensity(image_intensity, input_intensity):
-    # Definieren der Gewichtungsfaktoren
-    image_weight = 0.6
-    input_weight = 0.4
-
-    # Sicherstellen, dass beide Intensitäten verfügbar sind
-    if image_intensity is not None and input_intensity is not None:
-        total_intensity = (image_weight * image_intensity) + (input_weight * input_intensity)
-        return total_intensity
-    else:
-        return None
-
-def process_screen():
-    # Holen Sie sich das aktuelle Display-Surface
-    screen_surface = pygame.display.get_surface()
-
-    # Konvertieren Sie das Surface in ein Array
-    screen_array = pygame.surfarray.array3d(screen_surface)
-
-    # Transponieren Sie das Array, um die Achsen zu korrigieren
-    screen_array = np.transpose(screen_array, (1, 0, 2))
-
-    # Reduzieren Sie die Auflösung (z. B. auf 1/4 der Originalgröße)
-    small_array = screen_array[::4, ::4]
-
-    # Konvertieren Sie in Graustufen
-    gray_array = np.dot(small_array[...,:3], [0.2989, 0.5870, 0.1140])
-
-    # Optional: Normieren Sie die Werte
-    gray_array = gray_array / 255.0
-
-    # Berechnen Sie das durchschnittliche Helligkeitsniveau
-    average_brightness = np.mean(gray_array)
-
-    # Extrahieren Sie weitere Merkmale nach Bedarf
-
-    return average_brightness
-
 
 def gamemain(args):
     #initialize all our code (not load resources)
     pygame.init()
-    pygame.mixer.quit()
     game.clock = pygame.time.Clock()
 
     players.load_players()
@@ -108,15 +61,6 @@ def gamemain(args):
 
     #main game loop
     lasthandler = None
-
-    input_analyzer = InputAnalyzer()
-
-    # Initialisieren des Musikcontrollers
-    music_controller = MusicController()
-
-    # Starten der Musik
-    music_controller.play_music()
-
     while game.handler:
         numframes += 1
         handler = game.handler
@@ -154,30 +98,10 @@ def gamemain(args):
                 game.handler = None
                 break
             handler.event(event)
-            input_analyzer.process_event(event)
-
         handler.run()
         game.clockticks = game.clock.tick(40)
         #print 'ticks=%d  rawticks=%d  fps=%.2f'%(game.clock.get_time(), game.clock.get_rawtime(), game.clock.get_fps())
         gfx.update()
-
-        # Erfassen und Verarbeiten des Screenshots
-        image_intensity = process_screen()
-        print(f"[DEBUG] Bildintensität: {image_intensity}")
-        # Hier können Sie die image_intensity weiter verwenden
-
-        # Erfassen der Eingabeintensität
-        input_intensity = input_analyzer.get_input_intensity()
-        print(f"[DEBUG] Eingabeintensität: {input_intensity}")
-        # Gesamte Intensität berechnen
-        total_intensity = calculate_intensity(image_intensity, input_intensity)
-        print(f"[DEBUG] Gesamte Intensität: {total_intensity}")
-
-        if total_intensity is not None:
-            # Musik entsprechend aktualisieren
-            print(f"[DEBUG] Aktualisiere Musik mit Intensität: {total_intensity}")
-            music_controller.update_music(total_intensity)
-        
         while not pygame.display.get_active():
             pygame.time.wait(100)
             pygame.event.pump()
