@@ -47,17 +47,6 @@ class GamePlay:
         self.glitter = objshot.Glitter()
         self.hud = hud.HUD()
 
-
-
-        self.scamp_session = Session(tempo=120)
-        self.instrument = self.scamp_session.new_part("piano")
-
-        # Starten der Scamp-Session in einem separaten Thread
-        self.scamp_thread = threading.Thread(target=self.scamp_session.wait_for_children_to_finish)
-        self.scamp_thread.start()
-
-
-
         self.state = ''
         self.statetick = self.dummyfunc
         self.lives_left = 0
@@ -283,14 +272,6 @@ class GamePlay:
             if status:
                 self.grabbedboxes += 1
                 self.powerupcount += 0.6
-
-
-                note = random.randint(60, 72)  # Zufällige Note zwischen C4 und C5
-                duration = 0.2
-                print(f"Playing Scamp note {note}")  # Debug-Ausgabe
-                self.scamp_session.fork(self.instrument.play_note, args=(note, 0.8, duration))
-
-
                 if b in self.secretspikes:
                     self.touchingsecretspike = b
                     self.secretspikes.remove(b)

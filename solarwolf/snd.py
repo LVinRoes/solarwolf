@@ -34,13 +34,13 @@ def preload(*names):
             try: sound = mixer.Sound(fullname)
             except: sound = None
             sound_cache[name] = sound
+    return
 
 
 def fetch(name):
     if name not in sound_cache:
         preload(name)
     return sound_cache[name]
-
 
 
 def play(name, volume=1.0, pos=-1):
@@ -61,6 +61,7 @@ def play(name, volume=1.0, pos=-1):
                 percent = (pos / 700.0)
             inv = 1.0 - percent
             chan.set_volume(inv*volume, percent*volume)
+    return
 
 CurrentSong = None
 CurrentVolume = 1.0
@@ -90,6 +91,7 @@ def playmusic(musicname, volume=1.0):
         except pygame.error as e:
             print(f"Fehler beim Laden oder Abspielen der Musik: {e}")
             pass  # Fehler ignorieren, wenn Musikdatei nicht gefunden wird
+    return
 
 
 def finish_playmusic():
@@ -100,6 +102,7 @@ def finish_playmusic():
     music.load(fullname)
     music.play(-1)
     music.set_volume(prefvolume*CurrentVolume)
+    return
 
 
 
@@ -117,3 +120,4 @@ def tweakmusicvolume():
                 print(f"Fehler beim Abspielen der Musik: {e}")
                 pass  # Fehler ignorieren, wenn Musik nicht geladen ist
         music.set_volume(prefvolume*CurrentVolume)
+    return
