@@ -10,6 +10,8 @@ from input_analyzer import InputAnalyzer
 from music_controller import *
 from solarwolf.screen_processor import ScreenProcessor
 import logging
+from intensity_calculator import IntensityCalculator
+
 logging.basicConfig(level=logging.DEBUG)
 
 
@@ -30,42 +32,6 @@ def main(args):
     except KeyboardInterrupt:
         print('Keyboard Interrupt...')
         print('Exiting')
-
-def calculate_intensity(image_intensity, input_intensity):
-    image_weight = 0.4
-    input_weight = 0.6
-
-    # Wenn image_intensity None ist, setzen wir sie auf 0
-    if image_intensity is None:
-        image_intensity = 0.0
-
-    # Sicherstellen, dass die Intensitäten im Bereich [0,1] liegen
-    image_intensity = min(max(image_intensity, 0.0), 1.0)
-    if input_intensity is None:
-        input_intensity = 0.0
-    input_intensity = min(max(input_intensity, 0.0), 1.0)
-
-    total_intensity = (image_weight * image_intensity) + (input_weight * input_intensity)
-    total_intensity = min(max(total_intensity, 0.0), 1.0)
-
-    # Debugging-Ausgabe
-    #print(f"[DEBUG] Gesamtintensität: {total_intensity}")
-    #print(f"[DEBUG] Bildintensität: {image_intensity}, Eingabeintensität: {input_intensity}")
-
-    return total_intensity
-
-def get_intensity_level(intensity):
-    if intensity < 0.1:
-        return 1
-    elif intensity < 0.3:
-        return 2
-    elif intensity < 0.5:
-        return 3
-    elif intensity < 0.7:
-        return 4
-    else:
-        return 5
-
 
 def gamemain(args):
     #initialize all our code (not load resources)
@@ -121,10 +87,11 @@ def gamemain(args):
     # Starten der Musik
     #music_controller.play_music()
 
+    intensity_calculator = IntensityCalculator(alpha=0.3)
     previous_intensity_level = None
 
     # Starten des Musikcontrollers in einem separaten Thread
-    music_thread = threading.Thread(target=music_cont.run_scamp)
+    music_thread = threading.Thread(target=music_cont.run_scamp, daemon=True)
     music_thread.start()
     
     while game.handler:
@@ -173,16 +140,26 @@ def gamemain(args):
 
         # Erfassen und Verarbeiten des Screenshots
         image_intensity = screen_processor.process_screen()
+        
         # Erfassen der Eingabeintensität
         input_intensity = input_analyzer.get_input_intensity()
+        
         # Gesamte Intensität berechnen
-        total_intensity = calculate_intensity(image_intensity, input_intensity)
-
-        if total_intensity is not None:
-
-            current_intensity_level = get_intensity_level(total_intensity)
-            # Musik entsprechend aktualisieren
+        total_intensity = intensity_calculator.calculate_total_intensity(image_intensity, input_intensity)
+        
+        current_intensity_level = intensity_calculator.get_intensity_level(total_intensity, previous_intensity_level)
+        # Musik entsprechend aktualisieren
+        if current_intensity_level != previous_intensity_level:
             music_cont.update_music(current_intensity_level)
+            # Optional: Debugging-Ausgabe
+            # Fügen Sie nach der Berechnung der Intensitäten folgende Zeilen hinzu
+            print(f"Image Intensity: {image_intensity}")
+            print(f"Input Intensity: {input_intensity}")
+            print(f"Total Intensity (before smoothing): {total_intensity}")
+            print(f"Smoothed Total Intensity: {current_intensity_level}")
+
+
+        previous_intensity_level = current_intensity_level
 
             
         

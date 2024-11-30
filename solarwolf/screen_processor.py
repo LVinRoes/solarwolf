@@ -7,6 +7,8 @@ class ScreenProcessor:
         self.previous_frame = None
         self.last_capture_time = 0
         self.capture_interval = 0.5  # in Sekunden
+        self.last_intensity = 0.0
+        print("image processor initialized")
 
     def process_screen(self):
         current_time = time.time()
@@ -39,21 +41,16 @@ class ScreenProcessor:
                 average_change = np.mean(frame_diff)
 
                 # Skalierungsfaktor anwenden
-                scaling_factor = 50.0  # Erhöhen Sie diesen Wert
+                scaling_factor = 200.0
                 average_change *= scaling_factor
-                average_change = min(average_change, 1.0)
 
+                # Stellen Sie sicher, dass average_change im Bereich [0,1] liegt
+                average_change = min(max(average_change, 0.0), 1.0)
+
+                self.last_intensity = average_change
                 # Speichern Sie das aktuelle Bild
-                self.previous_frame = current_gray
-
-                # Debugging-Ausgabe
-                #print(f"[DEBUG] Durchschnittliche Bildänderung (skaliert): {average_change}")
-
                 return average_change
             else:
-                self.previous_frame = current_gray
-                return None
+                return self.last_intensity
         else:
             return None
-
-
