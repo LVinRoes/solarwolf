@@ -89,7 +89,10 @@ def gamemain(args):
     # Starten der Musik
     #music_controller.play_music()
 
+    use_internal_calc = True
+
     intensity_calculator = IntensityCalculator(alpha=0.3)
+    my_int_calc = None
     previous_intensity_level = None
 
     # Starten des Musikcontrollers in einem separaten Thread
@@ -142,29 +145,35 @@ def gamemain(args):
 
         current_intensity_level = 1
 
-        if isinstance(game.handler, GamePlay):
+        
+        print(isinstance(game.handler, GamePlay))
+
+        if isinstance(game.handler, GamePlay) and use_internal_calc:
+            print("alternative berechnung")
             if my_int_calc is None:
                 # Erzeuge eine Instanz des neuen Intensitätsrechners
                 my_int_calc = Intensity_calc_IS(game.handler)
 
             # Berechne die Intensität
-            raw_intensity = my_int_calc.calculate_intensity()
-            current_intensity_level = raw_intensity
+            total_intensity = my_int_calc.calculate_total_intensity()
+            current_intensity_level = my_int_calc.get_intensity_level(total_intensity, previous_intensity_level)
+        else:
 
-        # Erfassen und Verarbeiten des Screenshots
-        image_intensity = screen_processor.process_screen()
-        
-        # Erfassen der Eingabeintensität
-        input_intensity = input_analyzer.get_input_intensity()
+            image_intensity = screen_processor.process_screen()
+            # Erfassen der Eingabeintensität
+            input_intensity = input_analyzer.get_input_intensity()
+
+            total_intensity = intensity_calculator.calculate_total_intensity(image_intensity, input_intensity)
+            current_intensity_level = intensity_calculator.get_intensity_level(total_intensity, previous_intensity_level)
         
         # Gesamte Intensität berechnen
 
         #############################################################################
-        total_intensity = intensity_calculator.calculate_total_intensity(image_intensity, input_intensity)
+        
         #total_intensity = my_int_calc.calculate_intensity()
         #############################################################################
 
-        current_intensity_level = intensity_calculator.get_intensity_level(total_intensity, previous_intensity_level)
+        
         
         # Musik entsprechend aktualisieren
         if current_intensity_level != previous_intensity_level:
