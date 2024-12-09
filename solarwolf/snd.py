@@ -30,7 +30,7 @@ def preload(*names):
     for name in names:
         if name not in sound_cache:
             fullname = os.path.join('data', 'audio', name+'.wav')
-            #file = game.get_resource(name+'.wav')
+            file = game.get_resource(name+'.wav')
             try: sound = mixer.Sound(fullname)
             except: sound = None
             sound_cache[name] = sound
@@ -43,7 +43,8 @@ def fetch(name):
     return sound_cache[name]
 
 
-def play(name, volume=1.0, pos=-1):
+def play(name, volume=0.3, pos=-1):
+    volume = 0.3
     prefvolume = [0, 0.6, 1.0][game.volume]
     volume *= prefvolume
     if not volume:

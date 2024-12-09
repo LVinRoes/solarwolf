@@ -11,6 +11,8 @@ from music_controller import *
 from solarwolf.screen_processor import ScreenProcessor
 import logging
 from intensity_calculator import IntensityCalculator
+from intensity_calc_IS import Intensity_calc_IS
+from gameplay import GamePlay
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -138,6 +140,17 @@ def gamemain(args):
         #print 'ticks=%d  rawticks=%d  fps=%.2f'%(game.clock.get_time(), game.clock.get_rawtime(), game.clock.get_fps())
         gfx.update()
 
+        current_intensity_level = 1
+
+        if isinstance(game.handler, GamePlay):
+            if my_int_calc is None:
+                # Erzeuge eine Instanz des neuen Intensitätsrechners
+                my_int_calc = Intensity_calc_IS(game.handler)
+
+            # Berechne die Intensität
+            raw_intensity = my_int_calc.calculate_intensity()
+            current_intensity_level = raw_intensity
+
         # Erfassen und Verarbeiten des Screenshots
         image_intensity = screen_processor.process_screen()
         
@@ -145,9 +158,14 @@ def gamemain(args):
         input_intensity = input_analyzer.get_input_intensity()
         
         # Gesamte Intensität berechnen
+
+        #############################################################################
         total_intensity = intensity_calculator.calculate_total_intensity(image_intensity, input_intensity)
-        
+        #total_intensity = my_int_calc.calculate_intensity()
+        #############################################################################
+
         current_intensity_level = intensity_calculator.get_intensity_level(total_intensity, previous_intensity_level)
+        
         # Musik entsprechend aktualisieren
         if current_intensity_level != previous_intensity_level:
             music_cont.update_music(current_intensity_level)

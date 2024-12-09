@@ -1,22 +1,49 @@
+# test_script.py
 from scamp import *
-from music_controller import MusicController  # Replace with your actual module name
+from music_controller import MusicController
+import time
 
 def main():
-    # Initialize the MusicController
+    # Controller initialisieren
     controller = MusicController()
+    instruments.print_soundfont_presets()
 
-    # Start the SCAMP session directly without a separate thread
-    print("Music playing... Listen to ensure everything works correctly.")
-    #instruments.print_soundfont_presets()
-    controller.run_scamp()
-    # Run the SCAMP session on the main thread
+    # Musik starten
+    # run_scamp ist blockierend, da es auf wait_for_children_to_finish wartet.
+    # Daher führen wir es in einem separaten Thread aus, um parallel Aktionen durchführen zu können.
+    import threading
+    scamp_thread = threading.Thread(target=controller.run_scamp)
+    scamp_thread.start()
+
+    # Einige Sekunden warten, um etwas Musik zu hören
+    time.sleep(5)
+
+    # Intensitätslevel aktualisieren
     controller.update_music(2)
-    controller.session.wait_forever()
-    # Play music for a set amount of time (e.g., 30 seconds) to listen and verify
-    #controller.session.wait(2)  # Adjust the time as needed
+    print("[TEST] Intensity level updated to 2")
 
-    # Stop the music after the specified duration
-    print("Stopping music...")
+    # Noch ein paar Sekunden warten
+    time.sleep(5)
+
+    controller.update_music(4)
+
+    time.sleep(5)
+
+    controller.update_music(1)
+
+    time.sleep(5)
+
+    controller.update_music(5)
+
+    time.sleep(5)
+    # Jetzt den Prozess stoppen
+    print("[TEST] Stopping music now...")
+    controller.stop_flag = True
+
+    # Warten, bis alle Kinderprozesse beendet sind
+    scamp_thread.join()
+
+    print("[TEST] Process finished cleanly.")
 
 if __name__ == "__main__":
     main()
