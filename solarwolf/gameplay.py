@@ -518,7 +518,7 @@ class GamePlay:
 
 #level end
     def levelend_start(self):
-        snd.play('levelfinish')
+        #snd.play('levelfinish')
         self.popobjs.append(objwarp.Warp(self.player.rect.center))
         self.player.dead = 1
         self.player.active = 0
@@ -599,7 +599,7 @@ class GamePlay:
         self.ticks = 0
         self.level = 0
         self.donehud = 0
-        sound = snd.fetch('whip')
+        sound = None
         self.whip = None
         if sound:
             self.whip = sound.play(-1)

@@ -87,8 +87,8 @@ stopthread = 0 #request thread terminate
 
 
 #these are the defualt 'setup' controlled by Preferences
-music = 2
-volume = 2
+music = 0
+volume = 0
 display = 1
 help = 0
 thruster = 0

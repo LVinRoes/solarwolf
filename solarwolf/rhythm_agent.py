@@ -11,6 +11,7 @@ class RhythmAgent:
         self.tom_low = 45  # Low Tom
         self.tom_mid = 47  # Mid Tom
         self.tom_high = 50  # High Tom
+
         self.crash = 49  # Crash Cymbal
 
     def generate_pattern(self, intensity_level):
@@ -32,15 +33,15 @@ class RhythmAgent:
         total_duration = beats_per_measure * total_measures  # = 8.0
 
         # Bestimme die Subdivision basierend auf dem Intensitätslevel
-        if intensity_level == 1:
+        if intensity_level <= 1:
             subdivision = 1.0  # Viertelnoten
-        elif intensity_level == 2:
+        elif intensity_level <= 2 and intensity_level > 1:
             subdivision = 0.5  # Achtelnoten
-        elif intensity_level == 3:
+        elif intensity_level <= 3 and intensity_level > 2:
             subdivision = 0.5  # Achtelnoten, aber mit mehr Instrumenten
-        elif intensity_level == 4:
+        elif intensity_level <= 4 and intensity_level > 3:
             subdivision = 0.25 # Sechzehntelnoten
-        elif intensity_level == 5:
+        elif intensity_level <= 5 and intensity_level > 4:
             subdivision = 0.25 # Sechzehntelnoten mit mehr Instrumenten
         else:
             subdivision = 1.0  # Standardmäßig Viertelnoten
@@ -52,12 +53,12 @@ class RhythmAgent:
             instruments = []
 
             # Logik zur Generierung des Patterns basierend auf dem Intensitätslevel
-            if intensity_level == 1:
+            if intensity_level <= 1:
                 # Kick auf jeder Viertelnote
                 # Bei subdivision = 1.0 gibt es genau 8 Subdivisions
                 instruments.append(self.kick)
 
-            elif intensity_level == 2:
+            elif intensity_level <= 2 and intensity_level > 1:
                 # Kick auf Beat 1 (current_beat=0.0) und Snare auf Beat 3 (current_beat=2.0)
                 current_beat = (i * subdivision) % beats_per_measure
                 if current_beat == 0.0:
@@ -65,7 +66,7 @@ class RhythmAgent:
                 elif current_beat == 2.0:
                     instruments.append(self.snare)
 
-            elif intensity_level == 3:
+            elif intensity_level <= 3 and intensity_level > 2:
                 # Hi-Hat auf jedem Achtel, Kick auf Beat 1, Snare auf Beat 3
                 current_beat = (i * subdivision) % beats_per_measure
                 instruments.append(self.closed_hihat)
@@ -74,7 +75,7 @@ class RhythmAgent:
                 elif current_beat == 2.0:
                     instruments.append(self.snare)
 
-            elif intensity_level == 4:
+            elif intensity_level <= 4 and intensity_level > 3:
                 # Hi-Hat auf jeder 16tel, Kick alle 4 (1 Beat), Snare auf dem Offbeat (i % 8 == 4)
                 instruments.append(self.closed_hihat)
                 if i % 4 == 0:
@@ -82,13 +83,12 @@ class RhythmAgent:
                 if i % 8 == 4:
                     instruments.append(self.snare)
 
-            elif intensity_level == 5:
+            elif intensity_level <= 5 and intensity_level > 4:
                 # Wechselnde Hi-Hats, Kick und Snare wie oben, plus Tom und Crash
                 if i % 2 == 0:
                     instruments.append(self.closed_hihat)
                 else:
                     instruments.append(self.open_hihat)
-
                 if i % 8 == 0:
                     instruments.append(self.kick)
                 if i % 8 == 4:

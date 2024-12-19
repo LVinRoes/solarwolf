@@ -1,49 +1,51 @@
-# test_script.py
-from scamp import *
-from music_controller import MusicController
+# test_slider.py
 import time
+import threading
+import tkinter as tk
+from tkinter import ttk
+from scamp import instruments
+from music_controller import MusicController
 
-def main():
-    # Controller initialisieren
-    controller = MusicController()
-    instruments.print_soundfont_presets()
+class MusicGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Music Intensity Controller")
 
-    # Musik starten
-    # run_scamp ist blockierend, da es auf wait_for_children_to_finish wartet.
-    # Daher führen wir es in einem separaten Thread aus, um parallel Aktionen durchführen zu können.
-    import threading
-    scamp_thread = threading.Thread(target=controller.run_scamp)
-    scamp_thread.start()
+        # Controller initialisieren
+        self.controller = MusicController()
 
-    # Einige Sekunden warten, um etwas Musik zu hören
-    time.sleep(5)
+        # Start SCAMP in separatem Thread
+        self.scamp_thread = threading.Thread(target=self.controller.run_scamp)
+        self.scamp_thread.start()
 
-    # Intensitätslevel aktualisieren
-    controller.update_music(2)
-    print("[TEST] Intensity level updated to 2")
+        # Intensitätsskala
+        self.intensity_scale = tk.Scale(root, from_=1.0, to=5.0, resolution=0.1, orient=tk.HORIZONTAL,
+                                        label="Intensity", length=300, command=self.on_intensity_change)
+        self.intensity_scale.set(self.controller.current_intensity_level)
+        self.intensity_scale.pack(pady=20)
 
-    # Noch ein paar Sekunden warten
-    time.sleep(5)
+        # Stop-Button, um die Musik zu beenden
+        self.stop_button = ttk.Button(root, text="Stop Music", command=self.stop_music)
+        self.stop_button.pack(pady=20)
 
-    controller.update_music(4)
+        # Instrumente auflisten (optional)
+        instruments.print_soundfont_presets()
 
-    time.sleep(5)
+    def on_intensity_change(self, value):
+        # Wird aufgerufen, wenn der Slider bewegt wird
+        # Konvertiere den Wert in float
+        intensity = float(value)
+        self.controller.update_music(intensity)
+        print(f"[GUI] Intensity updated to {intensity}")
 
-    controller.update_music(1)
-
-    time.sleep(5)
-
-    controller.update_music(5)
-
-    time.sleep(5)
-    # Jetzt den Prozess stoppen
-    print("[TEST] Stopping music now...")
-    controller.stop_flag = True
-
-    # Warten, bis alle Kinderprozesse beendet sind
-    scamp_thread.join()
-
-    print("[TEST] Process finished cleanly.")
+    def stop_music(self):
+        print("[GUI] Stopping music now...")
+        self.controller.stop_flag = True
+        self.scamp_thread.join()
+        print("[GUI] Process finished cleanly.")
+        self.stop_button.config(state="disabled")
 
 if __name__ == "__main__":
-    main()
+    root = tk.Tk()
+    app = MusicGUI(root)
+    root.mainloop()
