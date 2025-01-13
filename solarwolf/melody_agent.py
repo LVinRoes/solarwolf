@@ -2,36 +2,54 @@ import random
 
 class MelodyAgent:
     def __init__(self):
-        # A-Moll-Pentatonik: A (69), C (72), D (74), E (76), G (79)
+        
         self.scale = [69, 72, 74, 76, 79]
 
-        # Vordefinierte Grundthemen für jede Intensität (8.0 Sekunden total)
-        # Jede Melodie wird in vier Abschnitte (Maße) à 2.0 Sekunden aufgeteilt,
-        # um gezielter einzelne Takte randomisieren zu können.
         self.intensity_melodies = {
             1: [
-                (69, 2.0), (72, 2.0), (69, 2.0), (72, 2.0) # Sehr ruhig
+                (69, 2.0), (72, 2.0), (69, 2.0), (72, 2.0)
             ],
             2: [
-                (69,1.0),(72,1.0),(74,2.0),(72,1.0),(69,1.0),(74,2.0) # Etwas mehr Bewegung
+                (69,1.0),(72,1.0),(74,2.0),(72,1.0),(69,1.0),(74,2.0)
             ],
             3: [
-                (69,1.0),(72,0.5),(74,0.5),(76,1.0),(79,1.0),(76,1.0),(74,1.0),(72,2.0)
+                (69,0.75),(72,0.75),(74,0.5),(76,1.0),(79,1.5),(76,0.75),(74,0.75),(72,2.0)
             ],
             4: [
-                # 2x (A-C-D-E-G-E-D-C) mit je 4s
                 (69,0.5),(72,0.5),(74,0.5),(76,0.5),(79,0.5),(76,0.5),(74,0.5),(72,0.5),
                 (69,0.5),(72,0.5),(74,0.5),(76,0.5),(79,0.5),(76,0.5),(74,0.5),(72,0.5)
             ],
             5: [
-                # Sehr lebhaftes Muster (A-C-D-E-G-G-E-D-C-A-C-D-E-G-E-C), alle 0.5s
-                (69,0.5),(72,0.5),(74,0.5),(76,0.5),(79,0.5),(79,0.5),(76,0.5),(74,0.5),
-                (72,0.5),(69,0.5),(72,0.5),(74,0.5),(76,0.5),(79,0.5),(76,0.5),(72,0.5)
+                (69,0.25),(72,0.25),(74,0.5),(76,1.0),(79,0.25),(79,0.25),(76,0.5),(74,1.0),
+                (72,0.25),(69,0.25),(72,0.5),(74,1.0),(76,0.25),(79,0.25),(76,0.5),(72,1.0)
+            ]
+        }
+
+        self.phrase_library = {
+            1: [
+                # Ruhige Phrasen
+                [(69, 0.5), (72, 1.5)],            # A, C
+                [(72, 1.0), (69, 1.0)],            # C, A
+            ],
+            2: [
+                [(69, 0.5), (72,0.25), (74,0.25), (72,1.0)],
+                [(72, 0.5), (69, 0.5), (76,1.0)],
+            ],
+            3: [
+                [(69,0.5),(72,0.5),(74,0.5),(76,0.5)],  
+                [(76,1.0),(72,0.5),(74,0.5),(69,1.0)],
+            ],
+            4: [
+                [(69,0.25),(72,0.25),(74,0.5),(76,0.5),(79,0.5)],
+                [(72,0.5),(74,0.5),(76,0.25),(79,0.25),(76,0.5),(72,0.25)],
+            ],
+            5: [
+                [(69,0.25),(72,0.25),(74,0.25),(76,0.25),(79,0.25),(76,0.5)],
+                [(76,0.25),(79,0.25),(79,0.25),(76,0.25),(74,0.25),(72,0.25),(69,0.25)],
             ]
         }
 
     def _split_into_measures(self, pattern, measure_length=2.0):
-        """Teilt ein gegebenes Pattern (Liste aus (pitch, duration)) in Takte von measure_length Sek."""
         measures = []
         current_measure = []
         current_sum = 0.0
@@ -45,87 +63,126 @@ class MelodyAgent:
                 current_measure.append((p, d))
                 current_sum += d
             else:
-                # Falls ein Event länger ist als noch im Takt übrig, splitten wir die Note (selten)
-                # Um es einfach zu halten, vermeiden wir solche Fälle in vordefinierten Patterns.
                 pass
-
-        # Falls noch etwas übrig wäre (sollte nicht passieren, da die Patterns sauber aufgehen)
         if current_measure:
             measures.append(current_measure)
-
         return measures
 
     def _recombine_measures(self, measures):
-        """Setzt die Takte wieder zu einem Pattern zusammen."""
         combined = []
         for m in measures:
             combined.extend(m)
         return combined
 
-    def _randomize_measure(self, measure_length=2.0):
-        """Erzeugt einen zufälligen Takt nur aus Pentatonik-Noten."""
-        # Wir füllen measure_length mit zufälligen Noten und zufälligen Dauern,
-        # sodass die Summe der Dauern genau measure_length beträgt.
-        # Dauerwerte: 0.25, 0.5, 1.0 stehen zur Wahl.
-        durations = [0.25, 0.5, 1.0]
-        current_sum = 0.0
-        measure = []
-        while current_sum < measure_length - 0.25:  # wir brauchen mind. 0.25 Reserve
-            d = random.choice(durations)
-            if current_sum + d <= measure_length:
-                p = random.choice(self.scale)
-                measure.append((p, d))
-                current_sum += d
-        # Falls noch etwas Rest übrig ist, füge eine letzte Note mit der Restdauer hinzu
-        rest = measure_length - current_sum
-        if rest > 0:
-            p = random.choice(self.scale)
-            measure.append((p, rest))
-        return measure
-
-    def _slight_variation(self, measures, intensity_level):
-        """Wendet kleine Abweichungen an den existierenden Takte an:
-        - Mit einer gewissen Wahrscheinlichkeit werden einzelne Noten leicht in Pitch verändert.
-        - Bei höherer Intensität: mehr Variationen.
+    def _get_phrase_pattern(self, intensity_level=3):
         """
-        variation_chance = 0.05 * intensity_level  # z.B. bei Intensität 5 -> 25% Chance pro Note
-        for m in measures:
-            for i, (p, d) in enumerate(m):
-                if random.random() < variation_chance:
-                    # Leichte pitch variation innerhalb der Scale
-                    # Wir nehmen den ursprünglichen Pitch und suchen den nächsten oder vorherigen Skalenton
-                    # um subtil die Tonhöhe zu verändern.
-                    neighbors = [note for note in self.scale if abs(note - p) <= 5 and note != p]
-                    if neighbors:
-                        p_new = random.choice(neighbors)
-                        m[i] = (p_new, d)
-        return measures
+        Wählt eine Phrase aus der Bibliothek. Dann evtl. eine Transposition
+        oder leichte Variation (Pitch / Rhythm) anwenden.
+        """
+        if intensity_level not in self.phrase_library:
+            intensity_level = 3  # fallback
+
+        phrase_candidates = self.phrase_library[intensity_level]
+        phrase = random.choice(phrase_candidates)
+        r = random.random()
+        if r < 0.1:
+            phrase = [(p - 12, d) for (p,d) in phrase]
+        elif r < 0.3:
+            phrase = [(p + 12, d) for (p,d) in phrase]
+
+        if random.random() < 0.2 and len(phrase) > 2:
+            i = random.randint(0, len(phrase)-2)
+            p, d = phrase[i]
+            p_next, d_next = phrase[i+1]
+            # Nur wenn d > 0.25
+            if d > 0.25:
+                delta = 0.25
+                phrase[i] = (p, d - delta)
+                phrase[i+1] = (p_next, d_next + delta)
+
+        return phrase
+
+    def _assemble_4bar_phrase(self, intensity_level=3):
+        """
+        Erzeugt 4 Takte a 2s (8s total).
+        Ein typisches Schema: A–A–B–A
+        - A & B sind Phrasen aus self.phrase_library
+        """
+        # A-Phrase
+        phraseA = self._get_phrase_pattern(intensity_level)
+        # B-Phrase
+        phraseB = self._get_phrase_pattern(intensity_level)
+
+        # A–A–B–A (je 2 Sekunden pro Takt)
+        measureA = self._fit_to_measure(phraseA, 2.0)
+        measureB = self._fit_to_measure(phraseB, 2.0)
+
+        big_pattern = measureA + measureA + measureB + measureA
+        return big_pattern
+
+    def _fit_to_measure(self, phrase, measure_length=2.0):
+        """
+        Passt eine Phrase in die gewünschte measure_length an,
+        indem wir notfalls (a) am Ende kürzen oder (b) eine Pause/Note anhängen.
+        """
+        total = sum(d for (_,d) in phrase)
+        if abs(total - measure_length) < 0.01:
+            return phrase  
+        elif total < measure_length:
+            rest = measure_length - total
+            if len(phrase) > 0:
+                last_pitch = phrase[-1][0]
+            else:
+                last_pitch = random.choice(self.scale)
+            new_phrase = phrase + [(last_pitch, rest)]
+            return new_phrase
+        else:
+            # phrase ist länger als measure_length
+            result = []
+            running = 0.0
+            for p,d in phrase:
+                if running + d <= measure_length:
+                    result.append((p,d))
+                    running += d
+                else:
+                    delta = measure_length - running
+                    if delta > 0:
+                        result.append((p, delta))
+                    break
+            return result
+    def _slight_variation(self, pattern, intensity_level):
+        variation_chance = 0.05 * intensity_level
+        new_pattern = []
+        for (p,d) in pattern:
+            if random.random() < variation_chance:
+                possible_notes = [note for note in self.scale if abs(note - p) <= 5]
+                if possible_notes:
+                    p_new = random.choice(possible_notes)
+                else:
+                    p_new = p
+                new_pattern.append((p_new, d))
+            else:
+                new_pattern.append((p,d))
+        return new_pattern
 
     def generate_melody(self, intensity_level=3, total_duration=8.0, num_notes=16):
-        # Hole das Grundpattern für diese Intensität
+
+        big_pattern = self._assemble_4bar_phrase(intensity_level)
+
+        big_pattern = self._slight_variation(big_pattern, intensity_level)
+
+        """
         base_pattern = self.intensity_melodies.get(intensity_level, self.intensity_melodies[3])
+        if random.random() < 0.3:
+            # Mische 1 Takt des base_pattern
+            measures_base = self._split_into_measures(base_pattern, measure_length=2.0)
+            if measures_base:
+                # nimm z.B. den ersten Takt
+                big_pattern[0:len(measures_base[0])] = measures_base[0]
+        """
 
-        # Teile die Melodie in 4 Takte à 2 Sekunden auf (8s total)
-        measures = self._split_into_measures(base_pattern, measure_length=2.0)
+        pitches = [p for (p,d) in big_pattern]
+        durations = [d for (p,d) in big_pattern]
 
-        # Wahrscheinlichkeit, einen kompletten Takt zu randomisieren,
-        # steigt mit der Intensität
-        # z.B. Intensität 1: kaum Randomisierung
-        # Intensität 5: etwa 50% Chance pro Takt
-        randomize_chance = 0.1 * intensity_level  # Intensität 5 -> 0.5 = 50%
-
-        for i, measure in enumerate(measures):
-            if random.random() < randomize_chance:
-                # Ersetze diesen Takt komplett durch random Noten
-                measures[i] = self._randomize_measure(2.0)
-
-        # Zusätzlich kleine Pitch-Variationen an den restlichen Takten
-        measures = self._slight_variation(measures, intensity_level)
-
-        final_pattern = self._recombine_measures(measures)
-
-        pitches = [p for (p,d) in final_pattern]
-        durations = [d for (p,d) in final_pattern]
-
-        print("generate melody aufgerufen für Intensität:", intensity_level, "mit Randomisierung")
+        print("[DEBUG] generate_melody (phrasing) für Intensität:", intensity_level)
         return pitches, durations

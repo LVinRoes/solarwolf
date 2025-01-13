@@ -78,6 +78,8 @@ def gamemain(args):
     #random.seed(0)
 
 
+    
+
     #main game loop
     lasthandler = None
 
@@ -89,7 +91,7 @@ def gamemain(args):
     # Starten der Musik
     #music_controller.play_music()
 
-    use_internal_calc = True
+    use_internal_calc = False
 
     intensity_calculator = IntensityCalculator(alpha=0.3)
     my_int_calc = None
@@ -99,6 +101,12 @@ def gamemain(args):
     music_thread = threading.Thread(target=music_cont.run_scamp, daemon=True)
     music_thread.start()
     
+    def delayed_dump():
+        time.sleep(5)
+        music_cont.debug_dump_precomputed_data()
+
+    threading.Thread(target=delayed_dump, daemon=True).start()
+
     while game.handler:
         numframes += 1
         handler = game.handler
@@ -146,7 +154,6 @@ def gamemain(args):
         current_intensity_level = 1
 
         
-        print(isinstance(game.handler, GamePlay))
 
         if isinstance(game.handler, GamePlay) and use_internal_calc:
             print("alternative berechnung")
@@ -158,7 +165,7 @@ def gamemain(args):
             total_intensity = my_int_calc.calculate_total_intensity()
             current_intensity_level = my_int_calc.get_intensity_level(total_intensity, previous_intensity_level)
         else:
-
+            my_int_calc = None
             image_intensity = screen_processor.process_screen()
             # Erfassen der Eingabeintensität
             input_intensity = input_analyzer.get_input_intensity()
@@ -185,6 +192,7 @@ def gamemain(args):
             print(f"Total Intensity (before smoothing): {total_intensity}")
             print(f"Smoothed Total Intensity: {current_intensity_level}")
 
+        # Aktualisiere die Lautstärken in Echtzeit
 
         previous_intensity_level = current_intensity_level
 

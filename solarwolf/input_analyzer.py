@@ -28,7 +28,7 @@ class InputAnalyzer:
                 current_intensity = 0.0
 
             # Normalisieren der aktuellen Intensität
-            max_possible_intensity = 10.0  # Anpassen je nach erwartetem maximalem Eingabeaufkommen
+            max_possible_intensity = 3.0  # Anpassen je nach erwartetem maximalem Eingabeaufkommen
             current_intensity = min(current_intensity / max_possible_intensity, 1.0)
 
             # Anwenden des gleitenden Durchschnitts

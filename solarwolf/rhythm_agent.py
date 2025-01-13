@@ -2,7 +2,6 @@ import random
 
 class RhythmAgent:
     def __init__(self):
-        # Definiere die MIDI-Notennummern der Drum-Instrumente
         self.kick = 36  # Bass Drum
         self.snare = 38  # Snare Drum
         self.closed_hihat = 42  # Closed Hi-hat
@@ -27,12 +26,10 @@ class RhythmAgent:
         pattern_pitches = []
         pattern_durations = []
 
-        # Wir wollen immer 2 Takte in 4/4, also total_duration = 8.0
         beats_per_measure = 4
         total_measures = 2
-        total_duration = beats_per_measure * total_measures  # = 8.0
+        total_duration = beats_per_measure * total_measures  
 
-        # Bestimme die Subdivision basierend auf dem Intensitätslevel
         if intensity_level <= 1:
             subdivision = 1.0  # Viertelnoten
         elif intensity_level <= 2 and intensity_level > 1:
@@ -55,8 +52,11 @@ class RhythmAgent:
             # Logik zur Generierung des Patterns basierend auf dem Intensitätslevel
             if intensity_level <= 1:
                 # Kick auf jeder Viertelnote
-                # Bei subdivision = 1.0 gibt es genau 8 Subdivisions
-                instruments.append(self.kick)
+                current_beat = (i * subdivision) % beats_per_measure
+                if current_beat == 0.0:
+                    instruments.append(self.kick)
+                elif current_beat == 4.0:
+                    instruments.append(self.snare)
 
             elif intensity_level <= 2 and intensity_level > 1:
                 # Kick auf Beat 1 (current_beat=0.0) und Snare auf Beat 3 (current_beat=2.0)
@@ -85,7 +85,7 @@ class RhythmAgent:
 
             elif intensity_level <= 5 and intensity_level > 4:
                 # Wechselnde Hi-Hats, Kick und Snare wie oben, plus Tom und Crash
-                if i % 2 == 0:
+                if i % 3 == 0:
                     instruments.append(self.closed_hihat)
                 else:
                     instruments.append(self.open_hihat)
@@ -97,12 +97,7 @@ class RhythmAgent:
                     instruments.append(self.tom_mid)
                 if i == 0:
                     instruments.append(self.crash)
-
-            # Falls keine Instrumente in dieser Subdivision: Füller einfügen (leere Liste)
-            # Ansonsten wird die Liste mit Instrumenten als "Akkord" interpretiert.
             pattern_pitches.append(instruments) 
             pattern_durations.append(subdivision)
 
-        # Jetzt sollte pattern_durations immer so viele Einträge haben wie num_subdivisions,
-        # und deren Summe = num_subdivisions * subdivision = 8.0.
         return pattern_pitches, pattern_durations

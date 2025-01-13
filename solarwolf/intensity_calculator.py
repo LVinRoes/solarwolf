@@ -1,6 +1,6 @@
 # intensity_calculator.py
 class IntensityCalculator:
-    def __init__(self, image_weight=0.5, input_weight=0.5, alpha=0.7):
+    def __init__(self, image_weight=0.4, input_weight=0.6, alpha=0.7):
         self.image_weight = image_weight
         self.input_weight = input_weight
         self.alpha = alpha
