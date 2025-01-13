@@ -94,7 +94,7 @@ class MusicController:
         # --- Chords & Helpers ---
         self.intensity_chords = {
             1: [
-                ("Am7", [69, 72, 76], 4.0),
+                ("Am", [69, 72, 76], 4.0),
                 ("Am7", [69, 72, 76, 79], 4.0)
             ],
             2: [
@@ -237,7 +237,6 @@ class MusicController:
         """
         Wechselt zwischen Originaltonart (0) und +2 Halbtöne.
         """
-        print("TONARTWECHSEL SDPÜVSÜPDVLSÜPDLVSÜPDLVSÜD")
         if not self.transposed:
             self.key_offset = 2  
             self.transposed = True

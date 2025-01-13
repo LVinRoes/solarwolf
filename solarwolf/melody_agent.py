@@ -150,6 +150,7 @@ class MelodyAgent:
                         result.append((p, delta))
                     break
             return result
+        
     def _slight_variation(self, pattern, intensity_level):
         variation_chance = 0.05 * intensity_level
         new_pattern = []
