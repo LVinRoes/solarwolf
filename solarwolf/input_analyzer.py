@@ -1,12 +1,11 @@
 import pygame
 import time
+
 class InputAnalyzer:
     def __init__(self):
         self.key_counts = {}
         self.last_reset_time = time.time()
         self.reset_interval = 0.5
-        self.smoothed_intensity = 0.0
-        self.alpha = 0.5
         self.intensity_history = []
         self.history_length = 5
         self.last_intensity = 0.0
@@ -27,27 +26,23 @@ class InputAnalyzer:
             else:
                 current_intensity = 0.0
 
-            # Normalisieren der aktuellen Intensität
-            max_possible_intensity = 3.0  # Anpassen je nach erwartetem maximalem Eingabeaufkommen
+            # Normalisieren der aktuellen Intensität in [0, 1]
+            max_possible_intensity = 3.0
             current_intensity = min(current_intensity / max_possible_intensity, 1.0)
 
-            # Anwenden des gleitenden Durchschnitts
+            # Optional: Einfacher gleitender Mittelwert (kein exponentielles Smoothing!)
             self.intensity_history.append(current_intensity)
             if len(self.intensity_history) > self.history_length:
                 self.intensity_history.pop(0)
             average_intensity = sum(self.intensity_history) / len(self.intensity_history)
 
-            # Exponentielle Glättung
-            self.smoothed_intensity = (
-                self.alpha * average_intensity
-                + (1 - self.alpha) * self.smoothed_intensity
-            )
-
-            # Reset
+            # Reset der Zählung
             self.key_counts = {}
             self.last_reset_time = current_time
 
-            self.last_intensity = self.smoothed_intensity
-            return self.smoothed_intensity
+            # Setze last_intensity auf den geglätteten Mittelwert
+            self.last_intensity = average_intensity
+            return self.last_intensity
         else:
+            # Noch keine neue Berechnung -> alten Wert zurückgeben
             return self.last_intensity

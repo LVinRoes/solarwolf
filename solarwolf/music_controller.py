@@ -69,7 +69,7 @@ class MusicController:
         self.session = Session(tempo=130)
         self.stop_flag = False
 
-        self.current_intensity_level = 3
+        self.current_intensity_level = 1
 
         
         self.high_intensity_start_time_harmony = None
@@ -94,7 +94,7 @@ class MusicController:
         # --- Chords & Helpers ---
         self.intensity_chords = {
             1: [
-                ("Am", [69, 72, 76], 4.0),
+                ("Am", [65, 72, 76], 4.0),
                 ("Am7", [69, 72, 76, 79], 4.0)
             ],
             2: [
@@ -118,6 +118,7 @@ class MusicController:
                 ("Cmaj7", [60, 64, 67, 72], 2.0)
             ]
         }
+        
         self.harmony_helper = HarmonyHelper()
         self.current_chord = None
 
@@ -135,11 +136,17 @@ class MusicController:
         """
         Initialisiert die SCAMP-Instrumente, die später abgespielt werden.
         """
-        self.drone_instrument = self.session.new_part("Square Wave")
+        self.drone_instrument = self.session.new_part("English Horn")
+
+        self.drone2_instrument = self.session.new_part("Piano Merlin")
+
         self.drum_instrument = self.session.new_part("Power 2")
-        self.melody_instrument = self.session.new_part("Bass & Lead")
-        self.melody_layer_instrument = self.session.new_part("DistortionGuitar 2")
-        self.extra_instrument = self.session.new_part("Soundtrack 2")
+
+        self.melody_instrument = self.session.new_part("Marimba")
+        self.melody_layer_instrument = self.session.new_part("Synth Calliope")
+        self.octave_layer_instrument = self.session.new_part("Guitar 2")
+
+        self.extra_instrument = self.session.new_part("Sweep Pad")
         self.bass_instrument = self.session.new_part("Synth Bass")
         self.bass_layer_instrument = self.session.new_part("Slap Bass 1")
 
@@ -266,7 +273,6 @@ class MusicController:
 
     def play_bass(self):
         while not self.stop_flag:
-            
             level = self.current_intensity_level
             dynamic = intensity_to_dynamic(level)
             bass_data = self.music_buffer.get_music(level, "bass")
@@ -274,14 +280,32 @@ class MusicController:
             if bass_data:
                 pitches, durations = bass_data
                 print(f"[DEBUG] [Playback] BASS level={level}, notes={len(pitches)}")
+
                 for p, d in zip(pitches, durations):
                     if self.stop_flag:
                         break
+
                     transposed_pitch = p + self.key_offset
                     vol = self.layer_volumes["bass"]
-                    self.bass_instrument.play_note(
-                        pitch=transposed_pitch, length=d, volume=vol, properties=dynamic
-                    )
+
+                    # Falls Intensität < 3: Nur den Basston spielen
+                    if level < 3:
+                        self.bass_instrument.play_note(
+                            pitch=transposed_pitch,
+                            length=d,
+                            volume=vol,
+                            properties=dynamic
+                        )
+                    else:
+                        # Ab Intensität >= 3: Bass + Oktave drüber gleichzeitig
+                        chord = [transposed_pitch, transposed_pitch + 12]
+                        self.bass_instrument.play_chord(
+                            chord,
+                            length=d,
+                            volume=vol,
+                            properties=dynamic
+                        )
+
 
     def play_drone(self):
         while not self.stop_flag:
@@ -295,9 +319,11 @@ class MusicController:
                     if self.stop_flag:
                         break
                     vol = self.layer_volumes["drone"]
+                    instrument = (self.drone_instrument if level >= 3
+                                else self.drone2_instrument)
                     chord_pitches_transposed = [p + self.key_offset for p in chord_pitches]
                     self.current_chord = chord_name
-                    self.drone_instrument.play_chord(
+                    instrument.play_chord(
                         chord_pitches_transposed, length=chord_len, volume=vol, properties=dynamic
                     )
 
@@ -314,7 +340,8 @@ class MusicController:
                     if self.stop_flag:
                         break
                     vol = self.layer_volumes["drums"]
-                    if pitches:
+                    
+                    if pitches and level >= 2:
                         self.drum_instrument.play_chord(
                             pitches, length=dur, volume=vol, properties=dynamic
                         )
@@ -327,7 +354,6 @@ class MusicController:
 
             if self.skip_melody_until_next_chunk:
                 self.skip_melody_until_next_chunk = False
-
                 self.music_buffer.get_music(self.current_intensity_level, "melody")
                 time.sleep(0.1)
                 continue
@@ -350,6 +376,7 @@ class MusicController:
                     else:
                         print("[DEBUG] >>> Keine Harmonien diesmal.")
                     self.high_intensity_start_time_harmony = self.session.beat()
+
             if self.tonart_switch_just_happened:
                 do_harmony = False
 
@@ -360,24 +387,39 @@ class MusicController:
                 for pitch, dur in zip(pitches, durations):
                     if self.stop_flag:
                         break
+
+                    # --------------------------
+                    # Vorbereitung der Akkord-/Notenliste
+                    # --------------------------
                     vol = self.layer_volumes["melody"]
                     transposed_pitch = pitch + self.key_offset
-                    instrument = (self.melody_layer_instrument if level >= 4
-                                else self.melody_instrument)
+
+                    # Wir fügen immer die Oktave tiefer hinzu: (pitch - 12)
+                    chord = [transposed_pitch, transposed_pitch - 12]
 
                     if do_harmony:
-                        chord = [
-                            transposed_pitch,
-                            self.harmony_helper.get_third_above_in_scale(pitch) + self.key_offset
-                        ]
-                        instrument.play_chord(chord, length=dur, volume=vol, properties=dynamic)
-                    else:
-                        instrument.play_note(
-                            transposed_pitch, length=dur, volume=vol, properties=dynamic
-                        )
+                        # Füge Terz + Terz eine Oktave tiefer hinzu
+                        third = self.harmony_helper.get_third_above_in_scale(pitch) + self.key_offset
+                        chord.append(third)
+                        chord.append(third - 12)
+
+                    # --------------------------
+                    # Instrument wählen
+                    # --------------------------
+                    instrument = (
+                        self.melody_layer_instrument 
+                        if level >= 4 else self.melody_instrument
+                    )
+
+                    # --------------------------
+                    # Jetzt alles GLEICHZEITIG spielen
+                    # (ein einziger play_chord-Aufruf)
+                    # --------------------------
+                    instrument.play_chord(chord, length=dur, volume=vol, properties=dynamic)
 
                 if self.tonart_switch_just_happened:
                     self.tonart_switch_just_happened = False
+
 
 
 
@@ -398,9 +440,14 @@ class MusicController:
                     transposed_pitch = pitch + self.key_offset
                     # Ab Intensität 4: Tremolo
                     properties = [dynamic, "tremolo"] if level >= 4 else dynamic
-                    self.extra_instrument.play_note(
-                        pitch=transposed_pitch, length=dur, volume=vol, properties=properties
-                    )
+                    if level > 1:
+                        self.extra_instrument.play_note(
+                            pitch=transposed_pitch, length=dur, volume=vol, properties=properties
+                        )
+                    else:
+                        self.extra_instrument.play_note(
+                            pitch=transposed_pitch, length=dur, volume=0, properties=properties
+                        )
 
     def update_music(self, intensity_level):
         """
@@ -429,16 +476,16 @@ class MusicController:
         """
         Passt die Layer-Volumes basierend auf Intensität an.
         """
-        new_min = 0.5
-        new_max = 1.0
+        new_min = 0.7
+        new_max = 1
         def scale_vol(factor):
             return (new_min + factor) * (new_max - new_min)
 
         self.layer_volumes["drums"]  = scale_vol(intensity / 5)
-        self.layer_volumes["drone"]  = scale_vol(intensity / 12)
-        self.layer_volumes["melody"] = scale_vol(intensity / 5)
-        self.layer_volumes["extra"]  = scale_vol(intensity / 8)
-        self.layer_volumes["bass"]   = scale_vol(intensity / 5)
+        self.layer_volumes["drone"]  = scale_vol(intensity / 10)
+        self.layer_volumes["melody"] = scale_vol(intensity / 10)
+        self.layer_volumes["extra"]  = scale_vol(intensity / 4)
+        self.layer_volumes["bass"]   = scale_vol(intensity / 6)
 
     def _update_tempo_for_intensity(self, new_intensity, beats_for_transition=8.0):
         """
