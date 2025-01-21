@@ -71,11 +71,13 @@ class MusicController:
 
         self.current_intensity_level = 1
 
-        
+        self.counter = 0
+
         self.high_intensity_start_time_harmony = None
         self.high_intensity_start_time_transposition = None
         self.skip_melody_until_next_chunk = False
 
+        
 
         self.key_offset = 0  
         self.transposition_chance = 0.2
@@ -272,10 +274,15 @@ class MusicController:
         print("[DEBUG] All musical processes finished.")
 
     def play_bass(self):
+
         while not self.stop_flag:
             level = self.current_intensity_level
             dynamic = intensity_to_dynamic(level)
             bass_data = self.music_buffer.get_music(level, "bass")
+
+            self.counter += 1
+
+            print(self.counter)
 
             if bass_data:
                 pitches, durations = bass_data
@@ -482,7 +489,7 @@ class MusicController:
             return (new_min + factor) * (new_max - new_min)
 
         self.layer_volumes["drums"]  = scale_vol(intensity / 5)
-        self.layer_volumes["drone"]  = scale_vol(intensity / 10)
+        self.layer_volumes["drone"]  = scale_vol(intensity / 20)
         self.layer_volumes["melody"] = scale_vol(intensity / 10)
         self.layer_volumes["extra"]  = scale_vol(intensity / 4)
         self.layer_volumes["bass"]   = scale_vol(intensity / 6)

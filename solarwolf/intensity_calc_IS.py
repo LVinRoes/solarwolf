@@ -93,11 +93,11 @@ class Intensity_calc_IS:
         # Schwellenwerte
         if smoothed_intensity < 0.1:
             current_level = 1
-        elif smoothed_intensity < 0.2:
+        elif smoothed_intensity < 0.25:
             current_level = 2
-        elif smoothed_intensity < 0.3:
-            current_level = 3
         elif smoothed_intensity < 0.4:
+            current_level = 3
+        elif smoothed_intensity < 0.5:
             current_level = 4
         else:
             current_level = 5
