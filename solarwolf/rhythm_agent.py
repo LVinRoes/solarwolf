@@ -1,103 +1,130 @@
 import random
+from typing import List, Tuple
 
 class RhythmAgent:
     def __init__(self):
-        self.kick = 36  # Bass Drum
-        self.snare = 38  # Snare Drum
-        self.closed_hihat = 42  # Closed Hi-hat
-        self.open_hihat = 46  # Open Hi-hat
-        self.ride = 51  # Ride Cymbal
-        self.tom_low = 45  # Low Tom
-        self.tom_mid = 47  # Mid Tom
-        self.tom_high = 50  # High Tom
+        # MIDI-Notennummern für die jeweiligen Drums
+        self.kick = 36         # Bass Drum
+        self.snare = 38        # Snare Drum
+        self.closed_hihat = 42
+        self.open_hihat = 46
+        self.ride = 51
+        self.tom_low = 45
+        self.tom_mid = 47
+        self.tom_high = 50
+        self.crash = 49
 
-        self.crash = 49  # Crash Cymbal
-
-    def generate_pattern(self, intensity_level):
+    def random_hihat(self) -> int:
         """
-        Generiert immer 2 Takte (8 Schläge bei 4/4), basierend auf dem Intensitätslevel.
-        Nutzt ggf. Füller-Events, sodass die Gesamtdauer immer 8 beträgt.
-        :param intensity_level: Wert zwischen 1 und 5
-        :return: Tuple aus Listen von pitches und durations, wobei pitches jetzt Listen von MIDI-Noten
-                 darstellen (für einen Akkord). Falls kein Instrument erklingt, wird eine leere Liste
-                 eingefügt. durations enthält für jede Subdivision genau eine Dauer, sodass die Summe der
-                 durations immer 8.0 ergibt.
+        Liefert mit 10% Wahrscheinlichkeit einen offenen Hi‑Hat zurück,
+        ansonsten den geschlossenen Hi‑Hat – für subtile Variationen.
         """
-        pattern_pitches = []
-        pattern_durations = []
+        #return self.open_hihat if random.random() < 0.1 else self.closed_hihat
+        return self.closed_hihat
 
+    def generate_pattern(self, intensity_level: float) -> Tuple[float, Tuple[List[List[int]], List[float]]]:
+        """
+        Generiert ein Drum-Pattern für 2 Takte (8 Beats in 4/4) ...
+        """
+        # NEU: Falls die Intensität 1 oder kleiner ist, gib ein leeres Pattern zurück.
+        
         beats_per_measure = 4
         total_measures = 2
-        total_duration = beats_per_measure * total_measures  
+        total_beats = beats_per_measure * total_measures  # 8 Beats insgesamt
 
-        if intensity_level <= 1:
-            subdivision = 1.0  # Viertelnoten
-        elif intensity_level <= 2 and intensity_level > 1:
-            subdivision = 0.5  # Achtelnoten
-        elif intensity_level <= 3 and intensity_level > 2:
-            subdivision = 0.5  # Achtelnoten, aber mit mehr Instrumenten
-        elif intensity_level <= 4 and intensity_level > 3:
-            subdivision = 0.25 # Sechzehntelnoten
-        elif intensity_level <= 5 and intensity_level > 4:
-            subdivision = 0.25 # Sechzehntelnoten mit mehr Instrumenten
+        # Berechne den linearen Faktor f (0 bis 1)
+        f = max(0.0, min(1.0, (intensity_level - 2) / 3.0))
+
+        # Wähle die Unterteilung in Abhängigkeit vom intensity_level:
+        if intensity_level <= 2.0:
+            subdivision = 1.0   # Viertelnoten
+            spb = 1             # Subdivisions per beat
+        elif intensity_level <= 4.0:
+            subdivision = 0.5   # Achtelnoten
+            spb = 2
         else:
-            subdivision = 1.0  # Standardmäßig Viertelnoten
+            subdivision = 0.25  # Sechzehntelnoten
+            spb = 4
 
-        # Berechne die Anzahl der Subdivisions
-        num_subdivisions = int(total_duration / subdivision)
+        pattern_pitches: List[List[int]] = []
+        pattern_durations: List[float] = []
 
-        for i in range(num_subdivisions):
-            instruments = []
-
-            # Logik zur Generierung des Patterns basierend auf dem Intensitätslevel
-            if intensity_level <= 1:
-                # Kick auf jeder Viertelnote
-                current_beat = (i * subdivision) % beats_per_measure
-                if current_beat == 0.0:
+        # (Der restliche Code bleibt unverändert ...)
+        if spb == 1:
+            # Viertelnoten-Modus
+            for beat in range(total_beats):
+                beat_in_measure = beat % beats_per_measure
+                instruments = [self.random_hihat()]
+                if beat_in_measure in (0, 2) and f >= 0.33:
                     instruments.append(self.kick)
-                elif current_beat == 4.0:
+                    if random.random() < 0.1:
+                        instruments.append(self.tom_low)
+                if beat_in_measure in (1, 3) and f >= 0.5:
                     instruments.append(self.snare)
-
-            elif intensity_level <= 2 and intensity_level > 1:
-                # Kick auf Beat 1 (current_beat=0.0) und Snare auf Beat 3 (current_beat=2.0)
-                current_beat = (i * subdivision) % beats_per_measure
-                if current_beat == 0.0:
-                    instruments.append(self.kick)
-                elif current_beat == 2.0:
-                    instruments.append(self.snare)
-
-            elif intensity_level <= 3 and intensity_level > 2:
-                # Hi-Hat auf jedem Achtel, Kick auf Beat 1, Snare auf Beat 3
-                current_beat = (i * subdivision) % beats_per_measure
-                instruments.append(self.closed_hihat)
-                if current_beat == 0.0:
-                    instruments.append(self.kick)
-                elif current_beat == 2.0:
-                    instruments.append(self.snare)
-
-            elif intensity_level <= 4 and intensity_level > 3:
-                # Hi-Hat auf jeder 16tel, Kick alle 4 (1 Beat), Snare auf dem Offbeat (i % 8 == 4)
-                instruments.append(self.closed_hihat)
-                if i % 4 == 0:
-                    instruments.append(self.kick)
-                if i % 8 == 4:
-                    instruments.append(self.snare)
-
-            elif intensity_level <= 5 and intensity_level > 4:
-                # Wechselnde Hi-Hats, Kick und Snare wie oben, plus Tom und Crash
-                if i % 3 == 0:
-                    instruments.append(self.closed_hihat)
-                else:
-                    instruments.append(self.open_hihat)
-                if i % 8 == 0:
-                    instruments.append(self.kick)
-                if i % 8 == 4:
-                    instruments.append(self.snare)
-                if i % 16 == 8:
-                    instruments.append(self.tom_mid)
-                if i == 0:
+                    if random.random() < 0.1:
+                        instruments.append(self.tom_mid)
+                if f >= 0.66:
+                    instruments.append(self.random_hihat())
+                if beat == total_beats - 1 and f >= 0.8:
                     instruments.append(self.crash)
-            pattern_pitches.append(instruments) 
-            pattern_durations.append(subdivision)
+                if random.random() < 0.05:
+                    instruments.append(self.random_hihat())
+                pattern_pitches.append(instruments)
+                pattern_durations.append(subdivision)
+        elif spb == 2:
+            # Achtelnoten-Modus
+            for beat in range(total_beats):
+                beat_in_measure = beat % beats_per_measure
+                instruments_down = [self.random_hihat()]
+                if beat_in_measure in (0, 2) and f >= 0.33:
+                    instruments_down.append(self.kick)
+                    if random.random() < 0.1:
+                        instruments_down.append(self.tom_low)
+                if beat_in_measure in (1, 3) and f >= 0.5:
+                    instruments_down.append(self.snare)
+                    if random.random() < 0.1:
+                        instruments_down.append(self.tom_mid)
+                if f >= 0.66:
+                    instruments_down.append(self.random_hihat())
+                if beat == total_beats - 1 and f >= 0.8:
+                    instruments_down.append(self.crash)
+                if random.random() < 0.05:
+                    instruments_down.append(self.random_hihat())
+                pattern_pitches.append(instruments_down)
+                pattern_durations.append(subdivision)
 
-        return pattern_pitches, pattern_durations
+                instruments_off = [self.random_hihat()]
+                if random.random() < 0.15:
+                    instruments_off = [self.open_hihat]
+                if f >= 0.5 and random.random() < 0.1:
+                    instruments_off.append(self.random_hihat())
+                pattern_pitches.append(instruments_off)
+                pattern_durations.append(subdivision)
+        else:
+            # Sechzehntelnoten-Modus
+            for beat in range(total_beats):
+                beat_in_measure = beat % beats_per_measure
+                for sub in range(4):
+                    instruments = []
+                    if sub == 0:
+                        instruments.append(self.random_hihat())
+                        if beat_in_measure in (0, 2) and f >= 0.33:
+                            instruments.append(self.kick)
+                            if random.random() < 0.1:
+                                instruments.append(self.tom_low)
+                        if beat_in_measure in (1, 3) and f >= 0.5:
+                            instruments.append(self.snare)
+                            if random.random() < 0.1:
+                                instruments.append(self.tom_mid)
+                        if f >= 0.66:
+                            instruments.append(self.random_hihat())
+                        if beat == total_beats - 1 and f >= 0.8:
+                            instruments.append(self.crash)
+                    else:
+                        instruments.append(self.random_hihat())
+                        if random.random() < 0.05:
+                            instruments.append(self.tom_high)
+                    pattern_pitches.append(instruments)
+                    pattern_durations.append(subdivision)
+
+        return intensity_level, (pattern_pitches, pattern_durations)
