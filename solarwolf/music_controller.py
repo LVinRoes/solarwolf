@@ -156,7 +156,7 @@ class MusicController:
         self.drone2_instrument = self.session.new_part("Piano Merlin")
         self.drum_instrument = self.session.new_part("Power 2")
         self.melody_instrument = self.session.new_part("Marimba")
-        self.melody_layer_instrument = self.session.new_part("Synth Calliope")
+        self.melody_layer_instrument = self.session.new_part("Poly Synth")
         self.octave_layer_instrument = self.session.new_part("Guitar 2")
         self.extra_instrument = self.session.new_part("Sweep Pad")
         self.bass_instrument = self.session.new_part("Synth Bass")
@@ -325,7 +325,7 @@ class MusicController:
                     instrument.play_chord(
                         transposed_chord,
                         length=chord_len,
-                        volume=vol-0.2,
+                        volume=vol-0.3,
                         properties=dynamic
                     )
 
@@ -335,9 +335,19 @@ class MusicController:
             dynamic = intensity_to_dynamic(current_intensity)
             drum_data = self.music_buffer.get_music(current_intensity, "drums")
             if drum_data:
-                generated_intensity, (pattern_pitches, pattern_durations) = drum_data
+                # Entpacke drum_data als (generated_intensity, pattern)
+                generated_intensity, pattern = drum_data
+                # Zerlege pattern (Liste von Tupeln (instruments, duration)) in zwei separate Listen:
+                if pattern:
+                    pattern_pitches, pattern_durations = zip(*pattern)
+                    pattern_pitches = list(pattern_pitches)
+                    pattern_durations = list(pattern_durations)
+                else:
+                    pattern_pitches, pattern_durations = [], []
+                
                 num_subdivisions = len(pattern_durations)
-                _, (new_pattern_pitches, _) = self.rhythm_agent.generate_pattern(current_intensity)
+                # Erzeuge zusätzlich ein neues Pattern aus dem RhythmAgent (falls benötigt)
+                _, new_pattern = self.rhythm_agent.generate_pattern(current_intensity)
                 vol = self.layer_volumes["drums"]
                 if current_intensity == 1:
                     vol = 0
@@ -377,11 +387,12 @@ class MusicController:
                         self.drum_instrument.play_chord(
                             result_instruments,
                             length=dur,
-                            volume=vol,
+                            volume=vol-0.1,
                             properties=dynamic
                         )
                     else:
                         self.drum_instrument.play_chord([32, 31], length=dur, volume=0)
+
 
 
     def play_melody(self) -> None:
@@ -427,7 +438,7 @@ class MusicController:
                         third = self.harmony_helper.get_third_above_in_scale(pitch) + self.key_offset
                         chord.extend([third, third - 12])
                     instrument = self.melody_layer_instrument if level >= 4 else self.melody_instrument
-                    instrument.play_chord(chord, length=dur, volume=vol-0.3, properties=dynamic)
+                    instrument.play_chord(chord, length=dur, volume=vol-0.2, properties=dynamic)
                 if self.tonart_switch_just_happened:
                     self.tonart_switch_just_happened = False
 
@@ -491,8 +502,8 @@ class MusicController:
 
     def _update_tempo_for_intensity(self, new_intensity: int, beats_for_transition: float = 8.0) -> None:
         old_bpm = self.session.tempo
-        base_bpm = 126
-        increment = 1.5
+        base_bpm = 124
+        increment = 1
         new_bpm = base_bpm + (new_intensity - 1) * increment
         logger.debug(f"Linearer Tempo-Übergang von {old_bpm:.1f} auf {new_bpm:.1f} BPM in {beats_for_transition} Beats.")
         self.session.set_tempo_target(

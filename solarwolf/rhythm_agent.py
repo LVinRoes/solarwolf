@@ -14,117 +14,166 @@ class RhythmAgent:
         self.tom_high = 50
         self.crash = 49
 
-    def random_hihat(self) -> int:
+        # Definiert Drum-Pattern als Listen von Tupeln (Instrumente, Dauer) für verschiedene Intensitätsstufen.
+        # Jedes Pattern summiert sich zu insgesamt 8 Beats.
+        self.pattern_library: dict[int, List[List[Tuple[List[int], float]]]] = {
+            1: [
+                # Intensitätsstufe 1: Einfache, ruhige Patterns (8 Viertelnoten à 1 Beat)
+                [([self.closed_hihat], 1.0) for _ in range(8)]
+            ],
+            2: [
+                # Intensitätsstufe 2: Pattern mit Kick und Snare abwechselnd (8 Viertelnoten à 1 Beat)
+                [
+                    ([self.kick, self.closed_hihat], 1.0),
+                    ([self.closed_hihat], 1.0),
+                    ([self.closed_hihat], 1.0),
+                    ([ self.closed_hihat], 1.0),
+                    ([self.closed_hihat], 1.0),
+                    ([self.closed_hihat], 1.0),
+                    ([self.closed_hihat], 1.0),
+                    ([self.closed_hihat], 1.0)   
+                ]
+            ],
+            3: [
+                # Intensitätsstufe 3: Achtelnoten-Pattern (16 Events à 0.5 Beat, insgesamt 8 Beats)
+                [
+                    ([self.closed_hihat, self.kick], 0.5),  # Down-Event: Closed Hi‑Hat + Kick
+                    ([self.closed_hihat], 0.5),             # Off-Event: Closed Hi‑Hat
+                    # Beat 2 (Beat 1, beat_in_measure = 1):
+                    ([self.closed_hihat], 0.5),             # Down-Event: Closed Hi‑Hat
+                    ([self.closed_hihat], 0.5),             # Off-Event: Closed Hi‑Hat
+                    # Beat 3 (Beat 2, beat_in_measure = 2):
+                    ([self.closed_hihat, self.kick], 0.5),  # Down-Event: Closed Hi‑Hat + Kick
+                    ([self.closed_hihat], 0.5),             # Off-Event: Closed Hi‑Hat
+                    # Beat 4 (Beat 3, beat_in_measure = 3):
+                    ([self.closed_hihat], 0.5),             # Down-Event: Closed Hi‑Hat
+                    ([self.closed_hihat], 0.5),             # Off-Event: Closed Hi‑Hat
+                    # Beat 5 (Beat 4, beat_in_measure = 0):
+                    ([self.closed_hihat, self.kick], 0.5),  # Down-Event: Closed Hi‑Hat + Kick
+                    ([self.closed_hihat], 0.5),             # Off-Event: Closed Hi‑Hat
+                    # Beat 6 (Beat 5, beat_in_measure = 1):
+                    ([self.closed_hihat], 0.5),             # Down-Event: Closed Hi‑Hat
+                    ([self.closed_hihat], 0.5),             # Off-Event: Closed Hi‑Hat
+                    # Beat 7 (Beat 6, beat_in_measure = 2):
+                    ([self.closed_hihat, self.kick], 0.5),  # Down-Event: Closed Hi‑Hat + Kick
+                    ([self.closed_hihat], 0.5),             # Off-Event: Closed Hi‑Hat
+                    # Beat 8 (Beat 7, beat_in_measure = 3):
+                    ([self.closed_hihat], 0.5),             # Down-Event: Closed Hi‑Hat
+                    ([self.closed_hihat], 0.5)              # Off-Event: Closed Hi‑Hat    
+                ]
+            ],
+            4: [
+                [
+                ([self.closed_hihat, self.kick, self.closed_hihat], 0.5),  # Down-Event: Closed Hi‑Hat + Kick + Extra Hi‑Hat
+                ([self.closed_hihat], 0.5),                                # Off-Event: Closed Hi‑Hat
+                # Beat 2 (Beat 1, beat_in_measure = 1):
+                ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),   # Down-Event: Closed Hi‑Hat + Snare + Extra Hi‑Hat
+                ([self.closed_hihat], 0.5),                                # Off-Event: Closed Hi‑Hat
+                # Beat 3 (Beat 2, beat_in_measure = 2):
+                ([self.closed_hihat, self.kick, self.closed_hihat], 0.5),  # Down-Event: Closed Hi‑Hat + Kick + Extra Hi‑Hat
+                ([self.closed_hihat], 0.5),                                # Off-Event: Closed Hi‑Hat
+                # Beat 4 (Beat 3, beat_in_measure = 3):
+                ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),   # Down-Event: Closed Hi‑Hat + Snare + Extra Hi‑Hat
+                ([self.closed_hihat], 0.5),                                # Off-Event: Closed Hi‑Hat
+                # Beat 5 (Beat 4, beat_in_measure = 0):
+                ([self.closed_hihat, self.kick, self.closed_hihat], 0.5),  # Down-Event: Closed Hi‑Hat + Kick + Extra Hi‑Hat
+                ([self.closed_hihat], 0.5),                                # Off-Event: Closed Hi‑Hat
+                # Beat 6 (Beat 5, beat_in_measure = 1):
+                ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),   # Down-Event: Closed Hi‑Hat + Snare + Extra Hi‑Hat
+                ([self.closed_hihat], 0.5),                                # Off-Event: Closed Hi‑Hat
+                # Beat 7 (Beat 6, beat_in_measure = 2):
+                ([self.closed_hihat, self.kick, self.closed_hihat], 0.5),  # Down-Event: Closed Hi‑Hat + Kick + Extra Hi‑Hat
+                ([self.closed_hihat], 0.5),                                # Off-Event: Closed Hi‑Hat
+                # Beat 8 (Beat 7, beat_in_measure = 3):
+                ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),   # Down-Event: Closed Hi‑Hat + Snare + Extra Hi‑Hat
+                ([self.closed_hihat], 0.5)        
+                ]                         # Off-Event: Closed Hi‑Hat
+            ],
+# Summe: 16 Events à 0.5 = 8 Beats.
+
+            5: [
+                # Intensitätsstufe 5: Sehr energiereiches Pattern mit zusätzlichen Variationen.
+                # Auch hier wird das 4-Beat-Pattern verdoppelt.
+                (
+                    [
+                        ([self.closed_hihat, self.kick, self.closed_hihat], 0.25),  # Sub 0: Down-Event
+                        ([self.closed_hihat], 0.25),                                 # Sub 1
+                        ([self.closed_hihat], 0.5),                                  # Sub 3
+                        # Beat 2 (Beat 1, beat_in_measure = 1):
+                        ([self.closed_hihat, self.snare, self.closed_hihat], 0.25),  # Sub 0: Down-Event
+                        ([self.closed_hihat], 0.25),                                 # Sub 1
+                        ([self.closed_hihat], 0.5),                                   # Sub 3
+                        # Beat 3 (Beat 2, beat_in_measure = 2):
+                        ([self.closed_hihat, self.kick, self.closed_hihat], 0.25),  # Sub 0: Down-Event
+                        ([self.closed_hihat], 0.25),                                 # Sub 1
+                        ([self.closed_hihat], 0.5),                                  # Sub 3
+                        # Beat 4 (Beat 3, beat_in_measure = 3):
+                        ([self.closed_hihat, self.snare, self.closed_hihat], 0.25),  # Sub 0: Down-Event
+                        ([self.closed_hihat], 0.25),                                 # Sub 1
+                        ([self.closed_hihat], 0.5),                                   # Sub 3
+                        # Beat 5 (Beat 4, beat_in_measure = 0):
+                        ([self.closed_hihat, self.kick, self.closed_hihat], 0.25),  # Sub 0: Down-Event
+                        ([self.closed_hihat], 0.25),                                 # Sub 1
+                        ([self.closed_hihat], 0.5),                                   # Sub 3
+                        # Beat 6 (Beat 5, beat_in_measure = 1):
+                        ([self.closed_hihat, self.snare, self.closed_hihat], 0.25),  # Sub 0: Down-Event
+                        ([self.closed_hihat], 0.25),                                 # Sub 1
+                        ([self.closed_hihat], 0.5),                                  # Sub 3
+                        # Beat 7 (Beat 6, beat_in_measure = 2):
+                        ([self.closed_hihat, self.kick, self.closed_hihat], 0.25),  # Sub 0: Down-Event
+                        ([self.closed_hihat], 0.25),                                 # Sub 1
+                        ([self.closed_hihat], 0.5),                                  # Sub 3
+                        # Beat 8 (Beat 7, beat_in_measure = 3):
+                        ([self.closed_hihat, self.snare, self.closed_hihat, self.crash], 0.25),  # Sub 0: Down-Event (Crash hinzu)
+                        ([self.closed_hihat], 0.25),                                             # Sub 1
+                        ([self.closed_hihat], 0.5),     
+                    ]   # Verdopple das Pattern für 8 Beats
+                )
+            ]
+        }
+
+    def _slight_variation(self, pattern: List[Tuple[List[int], float]], intensity_level: int) -> List[Tuple[List[int], float]]:
         """
-        Liefert mit 10% Wahrscheinlichkeit einen offenen Hi‑Hat zurück,
-        ansonsten den geschlossenen Hi‑Hat – für subtile Variationen.
+        Fügt dem Pattern leichte Variationen hinzu, z. B. den Austausch eines geschlossenen Hi‑Hat
+        gegen einen offenen Hi‑Hat mit einer gewissen Wahrscheinlichkeit.
         """
-        #return self.open_hihat if random.random() < 0.1 else self.closed_hihat
-        return self.closed_hihat
+        variation_chance = 0.01 * intensity_level
+        new_pattern = []
+        for instruments, duration in pattern:
+            new_instruments = instruments.copy()
+            if self.closed_hihat in new_instruments and random.random() < variation_chance:
+                new_instruments = [self.open_hihat if inst == self.closed_hihat else inst for inst in new_instruments]
+            new_pattern.append((new_instruments, duration))
+        return new_pattern
 
-    def generate_pattern(self, intensity_level: float) -> Tuple[float, Tuple[List[List[int]], List[float]]]:
+    def generate_pattern(self, intensity_level: float) -> Tuple[float, List[Tuple[List[int], float]]]:
         """
-        Generiert ein Drum-Pattern für 2 Takte (8 Beats in 4/4) ...
+        Wählt ein Drum-Pattern aus der Bibliothek basierend auf der Intensitätsstufe,
+        wendet leichte Variationen an und gibt das Pattern als Liste von Tupeln (Instrumente, Dauer) zurück.
+        Das resultierende Pattern summiert sich stets zu 8 Beats.
         """
-        # NEU: Falls die Intensität 1 oder kleiner ist, gib ein leeres Pattern zurück.
-        
-        beats_per_measure = 4
-        total_measures = 2
-        total_beats = beats_per_measure * total_measures  # 8 Beats insgesamt
+        level = int(round(intensity_level))
+        if level < 1:
+            level = 1
+        elif level > 5:
+            level = 5
 
-        # Berechne den linearen Faktor f (0 bis 1)
-        f = max(0.0, min(1.0, (intensity_level - 2) / 3.0))
+        if level not in self.pattern_library:
+            level = 3
 
-        # Wähle die Unterteilung in Abhängigkeit vom intensity_level:
-        if intensity_level <= 2.0:
-            subdivision = 1.0   # Viertelnoten
-            spb = 1             # Subdivisions per beat
-        elif intensity_level <= 4.0:
-            subdivision = 0.5   # Achtelnoten
-            spb = 2
-        else:
-            subdivision = 0.25  # Sechzehntelnoten
-            spb = 4
+        pattern_candidates = self.pattern_library[level]
+        pattern = random.choice(pattern_candidates)
+        pattern = self._slight_variation(pattern, level)
+        return intensity_level, pattern
 
-        pattern_pitches: List[List[int]] = []
-        pattern_durations: List[float] = []
-
-        # (Der restliche Code bleibt unverändert ...)
-        if spb == 1:
-            # Viertelnoten-Modus
-            for beat in range(total_beats):
-                beat_in_measure = beat % beats_per_measure
-                instruments = [self.random_hihat()]
-                if beat_in_measure in (0, 2) and f >= 0.33:
-                    instruments.append(self.kick)
-                    if random.random() < 0.1:
-                        instruments.append(self.tom_low)
-                if beat_in_measure in (1, 3) and f >= 0.5:
-                    instruments.append(self.snare)
-                    if random.random() < 0.1:
-                        instruments.append(self.tom_mid)
-                if f >= 0.66:
-                    instruments.append(self.random_hihat())
-                if beat == total_beats - 1 and f >= 0.8:
-                    instruments.append(self.crash)
-                if random.random() < 0.05:
-                    instruments.append(self.random_hihat())
-                pattern_pitches.append(instruments)
-                pattern_durations.append(subdivision)
-        elif spb == 2:
-            # Achtelnoten-Modus
-            for beat in range(total_beats):
-                beat_in_measure = beat % beats_per_measure
-                instruments_down = [self.random_hihat()]
-                if beat_in_measure in (0, 2) and f >= 0.33:
-                    instruments_down.append(self.kick)
-                    if random.random() < 0.1:
-                        instruments_down.append(self.tom_low)
-                if beat_in_measure in (1, 3) and f >= 0.5:
-                    instruments_down.append(self.snare)
-                    if random.random() < 0.1:
-                        instruments_down.append(self.tom_mid)
-                if f >= 0.66:
-                    instruments_down.append(self.random_hihat())
-                if beat == total_beats - 1 and f >= 0.8:
-                    instruments_down.append(self.crash)
-                if random.random() < 0.05:
-                    instruments_down.append(self.random_hihat())
-                pattern_pitches.append(instruments_down)
-                pattern_durations.append(subdivision)
-
-                instruments_off = [self.random_hihat()]
-                if random.random() < 0.15:
-                    instruments_off = [self.open_hihat]
-                if f >= 0.5 and random.random() < 0.1:
-                    instruments_off.append(self.random_hihat())
-                pattern_pitches.append(instruments_off)
-                pattern_durations.append(subdivision)
-        else:
-            # Sechzehntelnoten-Modus
-            for beat in range(total_beats):
-                beat_in_measure = beat % beats_per_measure
-                for sub in range(4):
-                    instruments = []
-                    if sub == 0:
-                        instruments.append(self.random_hihat())
-                        if beat_in_measure in (0, 2) and f >= 0.33:
-                            instruments.append(self.kick)
-                            if random.random() < 0.1:
-                                instruments.append(self.tom_low)
-                        if beat_in_measure in (1, 3) and f >= 0.5:
-                            instruments.append(self.snare)
-                            if random.random() < 0.1:
-                                instruments.append(self.tom_mid)
-                        if f >= 0.66:
-                            instruments.append(self.random_hihat())
-                        if beat == total_beats - 1 and f >= 0.8:
-                            instruments.append(self.crash)
-                    else:
-                        instruments.append(self.random_hihat())
-                        if random.random() < 0.05:
-                            instruments.append(self.tom_high)
-                    pattern_pitches.append(instruments)
-                    pattern_durations.append(subdivision)
-
-        return intensity_level, (pattern_pitches, pattern_durations)
+# Beispielhafte Verwendung:
+if __name__ == "__main__":
+    agent = RhythmAgent()
+    intensity = 3
+    intensity, pattern = agent.generate_pattern(intensity)
+    print("Intensity:", intensity)
+    print("Pattern (insgesamt 8 Beats):")
+    total_beats = sum(duration for (_, duration) in pattern)
+    for instruments, duration in pattern:
+        print("Instruments:", instruments, "Duration:", duration)
+    print("Total Beats:", total_beats)

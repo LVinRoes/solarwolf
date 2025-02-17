@@ -14,19 +14,14 @@ from intensity_calculator import IntensityCalculator
 from intensity_calc_IS import Intensity_calc_IS
 from gameplay import GamePlay
 
+# Für das Plotten des Graphen
+import matplotlib.pyplot as plt
+import os  # Wird benötigt, um den Ordner zu überprüfen/erstellen
+
 logging.basicConfig(level=logging.DEBUG)
-
-
-
-#import psyco
-
-#at this point, all needed pygame modules should
-#be imported, so they can be initialized at the
-#start of main()
 
 last_update_time = time.time()
 update_interval = 0.5  # in Sekunden
-
 
 def main(args):
     try:
@@ -36,8 +31,7 @@ def main(args):
         print('Exiting')
 
 def gamemain(args):
-    #initialize all our code (not load resources)
-    # Initialisieren des Musikcontrollers
+    # Initialisierungen (Musik, Display, Eingabe etc.)
     music_cont = MusicController()
     pygame.display.init()
     pygame.font.init()
@@ -63,34 +57,35 @@ def gamemain(args):
     if not txt.initialize():
         raise pygame.error("Pygame Font Module Unable to Initialize")
 
-    #create the starting game handler
+    # Erzeuge den starting game handler
     from gameinit import GameInit
     from gamefinish import GameFinish
     game.handler = GameInit(GameFinish(None))
 
-    #set timer to control stars..
+    # Timer, um die Sterne zu steuern
     pygame.time.set_timer(pygame.USEREVENT, 1000)
 
-
-    #psyco.full()
     gamestart = pygame.time.get_ticks()
     numframes = 0
-    #random.seed(0)
-
-
-    
-
-    #main game loop
-    lasthandler = None
 
     input_analyzer = InputAnalyzer()
 
     # Initialisieren des ScreenProcessors
     screen_processor = ScreenProcessor()
 
-    # Starten der Musik
-    #music_controller.play_music()
+    # Musikcontroller-Thread starten
+    music_thread = threading.Thread(target=music_cont.run_scamp, daemon=True)
+    music_thread.start()
+    
+    def delayed_dump():
+        time.sleep(5)
+        music_cont.debug_dump_precomputed_data()
+    threading.Thread(target=delayed_dump, daemon=True).start()
 
+    # Option für die Intensitätsberechnung:
+    # opt 0: interner Calc aus, 1: interner Calc an, 2: interner Calc mit Konstanz
+    ########################################################################################
+    name = "Richard"
     opt = 0
     if opt == 0:
         use_internal_calc = False
@@ -101,37 +96,32 @@ def gamemain(args):
     elif opt == 2:
         use_internal_calc = True
         const = True
+    ##########################################################################################
+
 
     intensity_calculator = IntensityCalculator()
     my_int_calc = None
     previous_intensity_level = None
 
-    # Starten des Musikcontrollers in einem separaten Thread
-    music_thread = threading.Thread(target=music_cont.run_scamp, daemon=True)
-    music_thread.start()
-    
-    def delayed_dump():
-        time.sleep(5)
-        music_cont.debug_dump_precomputed_data()
-
-    threading.Thread(target=delayed_dump, daemon=True).start()
+    # ***** Neue Variablen für das Logging des Intensitätscores *****
+    intensity_log_data = []  # Liste von (verstrichene Zeit, Intensitätswert)
+    logging_start_time = time.time()
+    last_sample_time = logging_start_time
+    file_generated = False  # Damit die Datei nur einmal erzeugt wird
+    # ****************************************************************
 
     while game.handler:
         numframes += 1
         handler = game.handler
-        if handler != lasthandler:
-            lasthandler = handler
-            if hasattr(handler, 'starting'):
-                handler.starting()
+        if handler != None and hasattr(handler, 'starting'):
+            handler.starting()
         for event in pygame.event.get():
             if event.type == pygame.USEREVENT:
                 fps = game.clock.get_fps()
-                #print 'FRAMERATE: %f fps' % fps
                 gfx.starobj.recalc_num_stars(fps)
                 continue
             elif event.type == pygame.ACTIVEEVENT:
                 if event.state == 4 and event.gain:
-                    #uniconified, lets try to kick the screen
                     pygame.display.update()
                 elif event.state == 2:
                     if hasattr(game.handler, 'gotfocus'):
@@ -141,7 +131,7 @@ def gamemain(args):
                             game.handler.lostfocus()
                 continue
             if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
-                if event.mod&pygame.KMOD_ALT:
+                if event.mod & pygame.KMOD_ALT:
                     game.display = not game.display
                     gfx.switchfullscreen()
                     continue
@@ -157,76 +147,77 @@ def gamemain(args):
 
         handler.run()
         game.clockticks = game.clock.tick(40)
-        #print 'ticks=%d  rawticks=%d  fps=%.2f'%(game.clock.get_time(), game.clock.get_rawtime(), game.clock.get_fps())
         gfx.update()
 
         current_intensity_level = 1
 
-        
-
         if isinstance(game.handler, GamePlay) and use_internal_calc:
             print("alternative berechnung")
             if my_int_calc is None:
-                # Erzeuge eine Instanz des neuen Intensitätsrechners
+                # Erzeuge Instanz des neuen Intensitätsrechners
                 my_int_calc = Intensity_calc_IS(game.handler)
-
-            # Berechne die Intensität
             total_intensity = my_int_calc.calculate_total_intensity()
             current_intensity_level = my_int_calc.get_intensity_level(total_intensity, previous_intensity_level)
         else:
             my_int_calc = None
             image_intensity = screen_processor.process_screen()
-            # Erfassen der Eingabeintensität
             input_intensity = input_analyzer.get_input_intensity()
-
             total_intensity = intensity_calculator.calculate_total_intensity(image_intensity, input_intensity)
             current_intensity_level = intensity_calculator.get_intensity_level(total_intensity)
-        
-        # Gesamte Intensität berechnen
-
-        #############################################################################
-        
-        #total_intensity = my_int_calc.calculate_intensity()
-        #############################################################################
-
-        
         
         # Musik entsprechend aktualisieren
         if current_intensity_level != previous_intensity_level:
             if const:
                 current_intensity_level = 3
             music_cont.update_music(current_intensity_level)
-            # Optional: Debugging-Ausgabe
-            # Fügen Sie nach der Berechnung der Intensitäten folgende Zeilen hinzu
+            # Optional: Debug-Ausgabe
             print(f"Image Intensity: {image_intensity}")
             print(f"Input Intensity: {input_intensity}")
             print(f"Total Intensity (before smoothing): {total_intensity}")
             print(f"Smoothed Total Intensity: {current_intensity_level}")
 
-        # Aktualisiere die Lautstärken in Echtzeit
-
         previous_intensity_level = current_intensity_level
 
-            
-        
+        # ***** Intensitäts-Logging (alle 2 Sekunden) *****
+        current_time = time.time()
+        elapsed_time = current_time - logging_start_time
+        # Nur für die ersten 3 Minuten (180 Sekunden) messen:
+        if elapsed_time <= 180 and (current_time - last_sample_time) >= 2:
+            intensity_log_data.append((elapsed_time, total_intensity))
+            last_sample_time = current_time
+
+        # Nach 3 Minuten (sofern noch nicht geschehen) Graph erstellen und speichern
+        if not file_generated and elapsed_time >= 180:
+            times = [t for (t, intensity) in intensity_log_data]
+            intensities = [intensity for (t, intensity) in intensity_log_data]
+            plt.figure()
+            plt.plot(times, intensities, marker='o')
+            plt.xlabel("Verstrichene Zeit (s)")
+            plt.ylabel("Intensitätswert")
+            plt.title("Intensitätsverlauf über 3 Minuten")
+            plt.xlim([0, 180])
+            plt.grid(True)
+            # Sicherstellen, dass der Ordner existiert
+            log_folder = "studie_logging"
+            if not os.path.exists(log_folder):
+                os.makedirs(log_folder)
+            # Dateinamen zusammensetzen, z.B. "Jonas_1_log.png"
+            filename = os.path.join(log_folder, f"{name}_{opt}_log.png")
+            plt.savefig(filename)
+            plt.close()
+            logging.info("Intensitäts-Log wurde in '%s' gespeichert.", filename)
+            file_generated = True
+        # **************************************************
 
         while not pygame.display.get_active():
             pygame.time.wait(100)
             pygame.event.pump()
 
-        #pygame.time.wait(10)
-
     gameend = pygame.time.get_ticks()
     runtime = (gameend - gamestart) / 1000.0
-    #print "FINAL FRAMERATE: ", numframes, runtime, numframes//runtime
 
-
-    #game is finished at this point, do any
-    #uninitialization needed
+    # Uninitialisierung und Speichern von Daten
     input.save_translations()
     players.save_players()
     gamepref.save_prefs()
     pygame.quit()
-
-
-
