@@ -3,8 +3,6 @@ from typing import Dict, List, Tuple
 
 class HarmonyAgent:
     def __init__(self) -> None:
-        # Feste Akkordprogressionen pro Intensitätsstufe.
-        # Jede Progression ist eine Liste von Akkorden (Name, Pitches, Dauer) mit insgesamt 8 Beats.
         self.intensity_chords: Dict[int, List[List[Tuple[str, List[int], float]]]] = {
             1: [
                 [("Am", [65, 69, 72, 76], 4.0), ("Am7", [69, 72, 76, 79], 4.0)],
@@ -40,7 +38,7 @@ class HarmonyAgent:
         Gibt eine zufällig gewählte Akkordprogression zurück, die exakt total_beats (standardmäßig 8 Beats)
         dauert. Es werden ausschließlich feste Progressionen verwendet, die in self.intensity_chords definiert sind.
         """
-        # Hole alle Progressionen für die gegebene Intensität – falls nicht vorhanden, nutze Intensität 1.
+        
         progressions = self.intensity_chords.get(intensity, self.intensity_chords[1])
         progression = random.choice(progressions)
         

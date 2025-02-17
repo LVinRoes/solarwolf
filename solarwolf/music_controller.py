@@ -335,9 +335,7 @@ class MusicController:
             dynamic = intensity_to_dynamic(current_intensity)
             drum_data = self.music_buffer.get_music(current_intensity, "drums")
             if drum_data:
-                # Entpacke drum_data als (generated_intensity, pattern)
                 generated_intensity, pattern = drum_data
-                # Zerlege pattern (Liste von Tupeln (instruments, duration)) in zwei separate Listen:
                 if pattern:
                     pattern_pitches, pattern_durations = zip(*pattern)
                     pattern_pitches = list(pattern_pitches)
@@ -346,7 +344,6 @@ class MusicController:
                     pattern_pitches, pattern_durations = [], []
                 
                 num_subdivisions = len(pattern_durations)
-                # Erzeuge zusätzlich ein neues Pattern aus dem RhythmAgent (falls benötigt)
                 _, new_pattern = self.rhythm_agent.generate_pattern(current_intensity)
                 vol = self.layer_volumes["drums"]
                 if current_intensity == 1:
@@ -357,12 +354,10 @@ class MusicController:
 
                     print(f"Generated intensity: {generated_intensity}, current intensity: {self.current_intensity_level}")
 
-                    # Prüfe, ob wir in der zweiten Hälfte des Taktes sind
                     if index >= num_subdivisions / 2:
                         intensity_diff = self.current_intensity_level - generated_intensity
                         if abs(intensity_diff) > 0.5:
                             f = (index - (num_subdivisions / 2)) / (num_subdivisions / 2)
-                            # Bei einem Wechsel von niedrig nach hoch (intensity_diff > 0) den Fill-Faktor anpassen
                             if intensity_diff > 0:
                                 reduced_factor = f * 0.3 * abs(intensity_diff)
                             else:

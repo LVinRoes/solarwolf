@@ -7,9 +7,8 @@ class MelodyAgent:
 
         self.phrase_library = {
             1: [
-                # Stufe 1 (unverändert, da bereits recht ruhig)
-                [(69, 1), (72, 1)],            # A, C
-                [(72, 2.0)],                      # C (längere Note)
+                [(69, 1), (72, 1)],            
+                [(72, 2.0)],                      
                 [(69, 2.0)],
                 [(76, 2.0)],
                 [(69, 1.0), (67, 1.0)],
@@ -28,22 +27,24 @@ class MelodyAgent:
                 [(76, 2)] # 200 = Pause
             ],
             4: [
-                [(69, 0.5), (72, 0.5), (74, 1.0)],
+                [(69, 1), (74, 1.0)],
                 [(69, 0.5), (69, 0.5), (74, 1.0)],
-                [(72, 1.0), (74, 0.5), (76, 0.5)],
+                [(72, 0.5), (72, 0.5) ,(74, 0.5), (76, 0.5)],
                 [(69, 0.5), (72, 1.0), (79, 0.5)],
+                [(76, 2)],
                 [(74, 0.5), (76, 1.0), (74, 0.5)],
+                [(72, 0.5), (74, 0.5), (72, 0.5), (69, 0.5)],
                 [(69, 2)]
             ],
             5: [
-                [(69, 0.25), (72, 0.5), (72, 0.5) , (72,0.25), (74, 0.5)],
                 [(69, 0.25),(69, 0.25), (72, 0.5), (74, 1.0)],
                 [(76, 0.25),(76, 0.25), (72, 0.5), (74, 1.0)],
-                [(74, 0.5),(72, 0.5), (69, 0.25), (69, 0.25), (74, 0.5)],
-                [(74, 0.25),(74, 0.25), (69, 0.5), (72, 0.75), (69, 0.25)],
+                [(74, 1), (69, 0.25), (69, 0.25), (74, 0.5)],
+                [(74, 0.25),(74, 0.25), (69, 0.5), (72, 1)],
                 [(69, 2)],
                 [(69, 1), (72, 1)],
                 [(69, 1.0), (67, 1.0)],
+                [(69, 0.5), (69, 0.5), (72, 0.5), (69, 0.5)],
             ]
         }
 
@@ -61,7 +62,6 @@ class MelodyAgent:
                 current_measure.append((p, d))
                 current_sum += d
             else:
-                # Hier könnte man einen Takt umbrechen etc.
                 pass
         if current_measure:
             measures.append(current_measure)
@@ -99,7 +99,6 @@ class MelodyAgent:
                 phrase[i + 1] = (p_next, d_next + delta)
 
         #phrase = [(p + 12, d) for (p, d) in phrase]
-        # Konvertiere die Phrase von A‑Moll in C‑Dur (hier evtl. weitere Umsetzungen)
         return phrase
 
     def _fit_to_measure(self, phrase, measure_length=2.0):
@@ -195,7 +194,6 @@ class MelodyAgent:
 # Beispielhafte Verwendung:
 if __name__ == "__main__":
     agent = MelodyAgent()
-    # Generiere eine Melodie (in C Dur, da die A‑Moll-Phrasen umgerechnet werden)
     pitches, durations = agent.generate_melody(intensity_level=3)
     print("Pitches:", pitches)
     print("Durations:", durations)

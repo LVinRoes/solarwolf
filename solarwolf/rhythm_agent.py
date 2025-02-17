@@ -13,16 +13,23 @@ class RhythmAgent:
         self.tom_mid = 47
         self.tom_high = 50
         self.crash = 49
+        self.cowbell = 56
+        self.clap = 39
+        self.woodblock = 75
+        self.tambourine = 54
+        self.tambourine2 = 55
 
-        # Definiert Drum-Pattern als Listen von Tupeln (Instrumente, Dauer) für verschiedene Intensitätsstufen.
-        # Jedes Pattern summiert sich zu insgesamt 8 Beats.
+        self.shaker = 70
+        self.shaker2 = 69
+        self.shaker3 = 74
+
+        self.stick = 37
+
         self.pattern_library: dict[int, List[List[Tuple[List[int], float]]]] = {
             1: [
-                # Intensitätsstufe 1: Einfache, ruhige Patterns (8 Viertelnoten à 1 Beat)
                 [([self.closed_hihat], 1.0) for _ in range(8)]
             ],
             2: [
-                # Intensitätsstufe 2: Pattern mit Kick und Snare abwechselnd (8 Viertelnoten à 1 Beat)
                 [
                     ([self.kick, self.closed_hihat], 1.0),
                     ([self.closed_hihat], 1.0),
@@ -35,99 +42,71 @@ class RhythmAgent:
                 ]
             ],
             3: [
-                # Intensitätsstufe 3: Achtelnoten-Pattern (16 Events à 0.5 Beat, insgesamt 8 Beats)
                 [
-                    ([self.closed_hihat, self.kick], 0.5),  # Down-Event: Closed Hi‑Hat + Kick
-                    ([self.closed_hihat], 0.5),             # Off-Event: Closed Hi‑Hat
-                    # Beat 2 (Beat 1, beat_in_measure = 1):
-                    ([self.closed_hihat], 0.5),             # Down-Event: Closed Hi‑Hat
-                    ([self.closed_hihat], 0.5),             # Off-Event: Closed Hi‑Hat
-                    # Beat 3 (Beat 2, beat_in_measure = 2):
-                    ([self.closed_hihat, self.kick], 0.5),  # Down-Event: Closed Hi‑Hat + Kick
-                    ([self.closed_hihat], 0.5),             # Off-Event: Closed Hi‑Hat
-                    # Beat 4 (Beat 3, beat_in_measure = 3):
-                    ([self.closed_hihat], 0.5),             # Down-Event: Closed Hi‑Hat
-                    ([self.closed_hihat], 0.5),             # Off-Event: Closed Hi‑Hat
-                    # Beat 5 (Beat 4, beat_in_measure = 0):
-                    ([self.closed_hihat, self.kick], 0.5),  # Down-Event: Closed Hi‑Hat + Kick
-                    ([self.closed_hihat], 0.5),             # Off-Event: Closed Hi‑Hat
-                    # Beat 6 (Beat 5, beat_in_measure = 1):
-                    ([self.closed_hihat], 0.5),             # Down-Event: Closed Hi‑Hat
-                    ([self.closed_hihat], 0.5),             # Off-Event: Closed Hi‑Hat
-                    # Beat 7 (Beat 6, beat_in_measure = 2):
-                    ([self.closed_hihat, self.kick], 0.5),  # Down-Event: Closed Hi‑Hat + Kick
-                    ([self.closed_hihat], 0.5),             # Off-Event: Closed Hi‑Hat
-                    # Beat 8 (Beat 7, beat_in_measure = 3):
-                    ([self.closed_hihat], 0.5),             # Down-Event: Closed Hi‑Hat
-                    ([self.closed_hihat], 0.5)              # Off-Event: Closed Hi‑Hat    
+                    ([self.kick, self.open_hihat], 1),
+                    ([self.closed_hihat], 1.0),
+                    ([self.closed_hihat], 1.0),
+                    ([self.closed_hihat], 1.0),
+                    ([self.kick, self.closed_hihat], 1),
+                    ([self.closed_hihat], 1.0),
+                    ([self.closed_hihat], 1.0),
+                    ([self.closed_hihat, self.tom_mid], 1.0)   
                 ]
             ],
             4: [
                 [
-                ([self.closed_hihat, self.kick, self.closed_hihat], 0.5),  # Down-Event: Closed Hi‑Hat + Kick + Extra Hi‑Hat
-                ([self.closed_hihat], 0.5),                                # Off-Event: Closed Hi‑Hat
-                # Beat 2 (Beat 1, beat_in_measure = 1):
-                ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),   # Down-Event: Closed Hi‑Hat + Snare + Extra Hi‑Hat
-                ([self.closed_hihat], 0.5),                                # Off-Event: Closed Hi‑Hat
-                # Beat 3 (Beat 2, beat_in_measure = 2):
-                ([self.closed_hihat, self.kick, self.closed_hihat], 0.5),  # Down-Event: Closed Hi‑Hat + Kick + Extra Hi‑Hat
-                ([self.closed_hihat], 0.5),                                # Off-Event: Closed Hi‑Hat
-                # Beat 4 (Beat 3, beat_in_measure = 3):
-                ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),   # Down-Event: Closed Hi‑Hat + Snare + Extra Hi‑Hat
-                ([self.closed_hihat], 0.5),                                # Off-Event: Closed Hi‑Hat
-                # Beat 5 (Beat 4, beat_in_measure = 0):
-                ([self.closed_hihat, self.kick, self.closed_hihat], 0.5),  # Down-Event: Closed Hi‑Hat + Kick + Extra Hi‑Hat
-                ([self.closed_hihat], 0.5),                                # Off-Event: Closed Hi‑Hat
-                # Beat 6 (Beat 5, beat_in_measure = 1):
-                ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),   # Down-Event: Closed Hi‑Hat + Snare + Extra Hi‑Hat
-                ([self.closed_hihat], 0.5),                                # Off-Event: Closed Hi‑Hat
-                # Beat 7 (Beat 6, beat_in_measure = 2):
-                ([self.closed_hihat, self.kick, self.closed_hihat], 0.5),  # Down-Event: Closed Hi‑Hat + Kick + Extra Hi‑Hat
-                ([self.closed_hihat], 0.5),                                # Off-Event: Closed Hi‑Hat
-                # Beat 8 (Beat 7, beat_in_measure = 3):
-                ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),   # Down-Event: Closed Hi‑Hat + Snare + Extra Hi‑Hat
-                ([self.closed_hihat], 0.5)        
-                ]                         # Off-Event: Closed Hi‑Hat
+                ([self.open_hihat, self.kick, self.closed_hihat], 0.5),   
+                ([self.shaker], 0.5),   
+                ([self.closed_hihat, self.closed_hihat], 0.5),   
+                ([self.tambourine], 0.5),   
+                
+                ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),    
+               
+                ([self.shaker], 0.5),   
+                ([self.closed_hihat, self.closed_hihat], 0.5),   
+                ([self.tambourine], 0.5),   
+                                            
+                
+                ([self.closed_hihat, self.kick, self.closed_hihat], 0.5),       
+               
+                ([self.shaker], 0.5),  
+                ([self.closed_hihat, self.closed_hihat], 0.5),   
+                ([self.tambourine], 0.5),    
+                                         
+                
+                ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),  
+                ([self.shaker], 0.5),   
+                ([self.closed_hihat, self.closed_hihat], 0.5),  
+                
+                ([self.tom_low ,self.shaker3],0.5)    
+                       
+                ]                         
             ],
-# Summe: 16 Events à 0.5 = 8 Beats.
 
             5: [
-                # Intensitätsstufe 5: Sehr energiereiches Pattern mit zusätzlichen Variationen.
-                # Auch hier wird das 4-Beat-Pattern verdoppelt.
                 (
                     [
-                        ([self.closed_hihat, self.kick, self.closed_hihat], 0.25),  # Sub 0: Down-Event
-                        ([self.closed_hihat], 0.25),                                 # Sub 1
-                        ([self.closed_hihat], 0.5),                                  # Sub 3
-                        # Beat 2 (Beat 1, beat_in_measure = 1):
-                        ([self.closed_hihat, self.snare, self.closed_hihat], 0.25),  # Sub 0: Down-Event
-                        ([self.closed_hihat], 0.25),                                 # Sub 1
-                        ([self.closed_hihat], 0.5),                                   # Sub 3
-                        # Beat 3 (Beat 2, beat_in_measure = 2):
-                        ([self.closed_hihat, self.kick, self.closed_hihat], 0.25),  # Sub 0: Down-Event
-                        ([self.closed_hihat], 0.25),                                 # Sub 1
-                        ([self.closed_hihat], 0.5),                                  # Sub 3
-                        # Beat 4 (Beat 3, beat_in_measure = 3):
-                        ([self.closed_hihat, self.snare, self.closed_hihat], 0.25),  # Sub 0: Down-Event
-                        ([self.closed_hihat], 0.25),                                 # Sub 1
-                        ([self.closed_hihat], 0.5),                                   # Sub 3
-                        # Beat 5 (Beat 4, beat_in_measure = 0):
-                        ([self.closed_hihat, self.kick, self.closed_hihat], 0.25),  # Sub 0: Down-Event
-                        ([self.closed_hihat], 0.25),                                 # Sub 1
-                        ([self.closed_hihat], 0.5),                                   # Sub 3
-                        # Beat 6 (Beat 5, beat_in_measure = 1):
-                        ([self.closed_hihat, self.snare, self.closed_hihat], 0.25),  # Sub 0: Down-Event
-                        ([self.closed_hihat], 0.25),                                 # Sub 1
-                        ([self.closed_hihat], 0.5),                                  # Sub 3
-                        # Beat 7 (Beat 6, beat_in_measure = 2):
-                        ([self.closed_hihat, self.kick, self.closed_hihat], 0.25),  # Sub 0: Down-Event
-                        ([self.closed_hihat], 0.25),                                 # Sub 1
-                        ([self.closed_hihat], 0.5),                                  # Sub 3
-                        # Beat 8 (Beat 7, beat_in_measure = 3):
-                        ([self.closed_hihat, self.snare, self.closed_hihat, self.crash], 0.25),  # Sub 0: Down-Event (Crash hinzu)
-                        ([self.closed_hihat], 0.25),                                             # Sub 1
+                        ([self.open_hihat, self.kick, self.closed_hihat], 0.5), 
+                                                       
+                        ([self.closed_hihat], 0.5),              
+                        ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),  
+                                                      
+                        ([self.closed_hihat], 0.5),                
+                        ([self.closed_hihat, self.kick, self.closed_hihat], 0.5),  
+                                                       
+                        ([self.closed_hihat], 0.5),               
+                        ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),  
+                        ([self.closed_hihat], 0.5),                   
+                        ([self.closed_hihat, self.kick, self.closed_hihat], 0.5),  
+                        ([self.closed_hihat], 0.5),                         
+                        ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),  
+                        ([self.closed_hihat], 0.5),                                
+                        ([self.closed_hihat, self.kick, self.closed_hihat], 0.5),  
+                        ([self.closed_hihat], 0.5),                                
+                        ([self.closed_hihat, self.snare, self.closed_hihat, self.crash], 0.5),  
+                                                                   
                         ([self.closed_hihat], 0.5),     
-                    ]   # Verdopple das Pattern für 8 Beats
+                    ]   
                 )
             ]
         }

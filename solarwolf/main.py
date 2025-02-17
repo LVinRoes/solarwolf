@@ -85,7 +85,7 @@ def gamemain(args):
     # Option für die Intensitätsberechnung:
     # opt 0: interner Calc aus, 1: interner Calc an, 2: interner Calc mit Konstanz
     ########################################################################################
-    name = "Richard"
+    name = "Luca"
     opt = 0
     if opt == 0:
         use_internal_calc = False
@@ -103,12 +103,10 @@ def gamemain(args):
     my_int_calc = None
     previous_intensity_level = None
 
-    # ***** Neue Variablen für das Logging des Intensitätscores *****
-    intensity_log_data = []  # Liste von (verstrichene Zeit, Intensitätswert)
+    intensity_log_data = []  
     logging_start_time = time.time()
     last_sample_time = logging_start_time
-    file_generated = False  # Damit die Datei nur einmal erzeugt wird
-    # ****************************************************************
+    file_generated = False  
 
     while game.handler:
         numframes += 1
@@ -178,7 +176,6 @@ def gamemain(args):
 
         previous_intensity_level = current_intensity_level
 
-        # ***** Intensitäts-Logging (alle 2 Sekunden) *****
         current_time = time.time()
         elapsed_time = current_time - logging_start_time
         # Nur für die ersten 3 Minuten (180 Sekunden) messen:
@@ -186,7 +183,6 @@ def gamemain(args):
             intensity_log_data.append((elapsed_time, total_intensity))
             last_sample_time = current_time
 
-        # Nach 3 Minuten (sofern noch nicht geschehen) Graph erstellen und speichern
         if not file_generated and elapsed_time >= 180:
             times = [t for (t, intensity) in intensity_log_data]
             intensities = [intensity for (t, intensity) in intensity_log_data]
@@ -197,17 +193,16 @@ def gamemain(args):
             plt.title("Intensitätsverlauf über 3 Minuten")
             plt.xlim([0, 180])
             plt.grid(True)
-            # Sicherstellen, dass der Ordner existiert
+            
             log_folder = "studie_logging"
             if not os.path.exists(log_folder):
                 os.makedirs(log_folder)
-            # Dateinamen zusammensetzen, z.B. "Jonas_1_log.png"
+            
             filename = os.path.join(log_folder, f"{name}_{opt}_log.png")
             plt.savefig(filename)
             plt.close()
             logging.info("Intensitäts-Log wurde in '%s' gespeichert.", filename)
             file_generated = True
-        # **************************************************
 
         while not pygame.display.get_active():
             pygame.time.wait(100)
