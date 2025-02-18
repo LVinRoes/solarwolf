@@ -420,17 +420,40 @@ class GamePlay:
 
 
 #level start
+    #level start
     def levelstart_start(self):
         self.skipping = game.timeleft > 0.0
         self.levelnum += 1
-        del self.boxobjs[:]
-        self.newboxes, self.startpos, msg, num = levels.makelevel(self.levelnum)
+
+        # Falls eine forced difficulty sequence gesetzt ist, nimm den entsprechenden Schwierigkeitswert.
+        if hasattr(game, "forced_difficulty_sequence") and game.forced_difficulty_sequence:
+            # Beachte: Falls die Sequenz kürzer ist als die Anzahl der gespielten Level,
+            # kannst du modulo verwenden, oder aber die Sequenz einmalig abspielen.
+            difficulty = game.forced_difficulty_sequence[(self.levelnum - 1) % len(game.forced_difficulty_sequence)]
+        else:
+            difficulty = self.levelnum
+
+        self.difficulty = difficulty
+
+        # Gleichzeitig soll das Layout aus der forced layout sequence entnommen werden:
+        if hasattr(game, "level_layout_sequence") and game.level_layout_sequence:
+            layout_index = game.level_layout_sequence[(self.levelnum - 1) % len(game.level_layout_sequence)]
+        else:
+            layout_index = self.levelnum % len(levels.Levels)
+
+        # Jetzt wird das Levellayout anhand des layout_index gewählt, aber der difficulty-Wert wird für die
+        # Schwierigkeitsberechnungen (z. B. touches) genutzt:
+        self.newboxes, self.startpos, msg, num = levels.makelevel_with_forced_values(layout_index, difficulty)
+        
+        # Falls du die originale Funktion nicht ändern möchtest, könntest du
+        # auch in levels.makelevel() beide Werte übergeben – oder dort eine Unterscheidung einbauen.
+        
         random.shuffle(self.newboxes)
         self.calcboxes = num
         self.addtime = 2
         if game.clock.get_fps() < 25:
             self.addtime = 1
-        self.hud.drawlevel(self.levelnum)
+        self.hud.drawlevel(difficulty)
         if game.comments >= 2:
             self.textobjs.append(objtext.Text(msg))
         self.grabbedboxes = 0
@@ -438,31 +461,33 @@ class GamePlay:
         for b in self.guardobjs:
             b.nofire()
 
-        if self.levelnum > game.player.score:
-            game.player.score = self.levelnum
+        # Update des Spielerfortschritts – hier wird der Schwierigkeitswert übernommen:
+        if difficulty > game.player.score:
+            game.player.score = difficulty
+
         if not self.newcontinue and game.player.start_level() > self.startlevel:
             self.newcontinue = 1
 
-        for i in range(levels.numrocks(self.levelnum) - len(self.asteroidobjs)):
+        for i in range(levels.numrocks(difficulty) - len(self.asteroidobjs)):
             self.asteroidobjs.append(objasteroid.Asteroid())
 
         for p in self.powerupobjs:
             p.extendtime()
 
-        if self.skipping: self.skiptime = 20
+        if self.skipping:
+            self.skiptime = 20
 
-        #teleport in dead guards
+        # Restlicher Code für Teleportation, Guards, Spikes etc. bleibt unverändert:
         for g in self.guardobjs:
             if g.killed == 1:
                 self.smokeobjs.append(objguard.TeleGuard(g))
                 g.killed = 2
 
-        #make spikes
-        if self.levelnum >= 30:
-            numspikes = min(int((self.levelnum-30)//5) + 1, len(self.newboxes)-5)
+        if difficulty >= 30:
+            numspikes = min(int((difficulty - 30) // 5) + 1, len(self.newboxes) - 5)
             self.secretspikes = self.newboxes[-numspikes:]
-        elif self.levelnum >= 10:
-            numspikes = int((self.levelnum-10)//7) + 1
+        elif difficulty >= 10:
+            numspikes = int((difficulty - 10) // 7) + 1
             spikes = self.newboxes[-numspikes:]
             self.newboxes = self.newboxes[:-numspikes]
             for b in spikes:
@@ -473,6 +498,7 @@ class GamePlay:
         else:
             self.secretspikes = []
             self.touchingsecretspike = None
+
 
         #rotate music
         if pygame.time.get_ticks() - self.songtime > game.musictime:
@@ -504,7 +530,7 @@ class GamePlay:
     def levelstart_end(self):
         del self.newboxes
         del self.skipping
-        pct = 1.0 - (self.levelnum / 50.0)
+        pct = 1.0 - (self.difficulty / 50.0)
         pct = 1.0 - (pct * pct)
         pct = pct * .92
         game.guard_fire = .01 + pct * game.fire_factor

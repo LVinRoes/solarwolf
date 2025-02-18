@@ -13,6 +13,7 @@ import logging
 from intensity_calculator import IntensityCalculator
 from intensity_calc_IS import Intensity_calc_IS
 from gameplay import GamePlay
+from players import Player
 
 # Für das Plotten des Graphen
 import matplotlib.pyplot as plt
@@ -84,9 +85,36 @@ def gamemain(args):
 
     # Option für die Intensitätsberechnung:
     # opt 0: interner Calc aus, 1: interner Calc an, 2: interner Calc mit Konstanz
+
+
     ########################################################################################
-    name = "Luca"
-    opt = 1
+    name = "Test"
+
+    game.player = Player(name=name, score=20)
+    game.player.name = name
+
+    # In der main-Funktion, nach den Initialisierungen:
+    level_seed = 2 # z.B. 0, 1 oder 2
+    game.level_seed = level_seed
+
+    # Für das Layout – also welche Levellayouts gewählt werden sollen:
+    if level_seed == 0:
+        game.level_layout_sequence = [10, 27, 28, 0]
+    elif level_seed == 1:
+        game.level_layout_sequence = [11, 28, 29, 1]
+    elif level_seed == 2:
+        game.level_layout_sequence = [12, 30, 27, 2]
+    ##########################################################################################
+
+    # Für den Schwierigkeitsgrad – so kannst du beispielsweise sicherstellen, dass auch der Schwierigkeitswert steigt:
+    if level_seed == 0:
+        game.forced_difficulty_sequence = [10, 27, 28, 0]
+    elif level_seed == 1:
+        game.forced_difficulty_sequence = [11, 28, 29, 1]  # Beispielwerte: Level 10, dann 20, dann 30
+    elif level_seed == 2:
+        game.forced_difficulty_sequence = [12, 29, 27, 2]
+
+    opt = 2
     if opt == 0:
         use_internal_calc = False
         const = False
@@ -157,7 +185,7 @@ def gamemain(args):
         elapsed_time = current_time - logging_start_time
 
         if isinstance(game.handler, GamePlay) and use_internal_calc:
-            print("alternative berechnung")
+            #print("alternative berechnung")
             if my_int_calc is None:
                 my_int_calc = Intensity_calc_IS(game.handler)
             total_intensity = my_int_calc.calculate_total_intensity()

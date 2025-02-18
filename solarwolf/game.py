@@ -18,7 +18,6 @@ guard_speed = 4
 guard_fire = .01
 fire_factor = .15
 
-
 arena = Rect(55, 50, 590, 490)
 
 poweruptime = 1200.0

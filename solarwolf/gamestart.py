@@ -292,6 +292,14 @@ class GameStart:
             snd.play('select_choose')
             if not p:
                 p = players.Player('')
+            else:
+                # Setze den Fortschritt zurück:
+                p.score = 0
+                p.lives = 0
+                p.skips = 0
+                p.cheater = 0
+                # Falls du noch weitere Attribute nutzt (z. B. einen aktuellen Levelzähler),
+                # setze diese hier ebenfalls zurück.
             global lastplayer
             lastplayer = p
             game.player = p
@@ -304,5 +312,6 @@ class GameStart:
             self.buildlist()
             self.current = [0, 0]
             self.moveto((120, 110))
+
 
 

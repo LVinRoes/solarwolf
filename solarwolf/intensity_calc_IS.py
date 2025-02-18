@@ -78,13 +78,13 @@ class Intensity_calc_IS:
         weight_distance = 2.0
         distance_score = distance_factor * weight_distance
 
-        print(f"Distance Score: {distance_score}")
+        #print(f"Distance Score: {distance_score}")
         # Gesamtscore erweitern
         intensity_score += distance_score
 
 
 
-        print(f"Intensity Score: {intensity_score}")
+        #print(f"Intensity Score: {intensity_score}")
         return intensity_score
 
     def calculate_total_intensity(self, image_intensity=None, input_intensity=None):
@@ -96,7 +96,7 @@ class Intensity_calc_IS:
         if normalized_intensity < 0.0:
             normalized_intensity = 0.0
 
-        print(f"Normalized Intensity: {normalized_intensity}")
+        #print(f"Normalized Intensity: {normalized_intensity}")
         return normalized_intensity
 
     def get_intensity_level(self, intensity, previous_intensity_level):
@@ -104,16 +104,16 @@ class Intensity_calc_IS:
         smoothed_intensity = self.smoothed_intensity
 
         # Schwellenwerte
-        if smoothed_intensity < 0.1:
+        if smoothed_intensity < 0.15:
             current_level = 1
-        elif smoothed_intensity < 0.25:
+        elif smoothed_intensity < 0.22:
             current_level = 2
-        elif smoothed_intensity < 0.38:
+        elif smoothed_intensity < 0.3:
             current_level = 3
-        elif smoothed_intensity < 0.48:
+        elif smoothed_intensity < 0.4:
             current_level = 4
         else:
             current_level = 5
 
-        print(f"Current Intensity Level: {current_level}")
+       #print(f"Current Intensity Level: {current_level}")
         return current_level

@@ -35,11 +35,61 @@ def init():
             curlev.append(l)
     initialized = 1
 
+def makelevel_with_forced_values(layout_index, difficulty):
+    "Returns (list, startcenter, msg, numboxes) for the given level using forced layout and difficulty."
+    if not initialized:
+        init()
+    # Wähle das Layout anhand des layout_index:
+    lev = Levels[layout_index % len(Levels)]
+    
+    # Berechne den Schwierigkeitsfaktor anhand des difficulty-Werts:
+    touches = difficulty // len(Levels) + 1
+    
+    boxlist = []
+    size = (58, 58)
+    corner = (106, 106)
+    startpos = (corner[0] + 236, corner[1] + 182)
+    pos = [corner[0], corner[1]]
+    numboxes = difficulty // 2  # Beispiel: Hier kannst du die Formel anpassen
+    
+    for row in lev[2:]:
+        cells = list(row)
+        if touches == 2:
+            cells.reverse()
+        for cell in cells:
+            if cell == '#':
+                boxlist.append(objbox.Box(pos, touches))
+                numboxes += touches
+            elif cell == '*':
+                boxlist.append(objbox.Box(pos, touches + 1))
+                numboxes += touches + 1
+            elif cell == 's':
+                startpos = (pos[0], pos[1])
+            pos[0] += size[0]
+        pos[0] = corner[0]
+        pos[1] += size[1]
+    
+    msg = lev[int(touches - 1)]
+    if difficulty == maxlevels() - 1:
+        msg = 'Final Level'
+    return boxlist, startpos, msg, numboxes
+
 
 def makelevel(level):
     "returns (list, startcenter) level number"
     if not initialized: init()
-    lev = Levels[level%len(Levels)]
+
+    # Prüfe, ob eine Levelsequenz vorgegeben wurde:
+    if hasattr(game, "level_sequence") and game.level_sequence:
+        # Wenn der aktuelle Levelzähler größer als die Sequenz ist,
+        # kann man entweder modulo nehmen oder ab einer bestimmten Stufe enden.
+        forced_index = game.level_sequence[level % len(game.level_sequence)]
+    else:
+        forced_index = level % len(Levels)
+
+
+    lev = Levels[forced_index]
+
     touches = level//len(Levels) + 1
     passes = (level>len(Levels) and 2) or 1
     boxlist = []
