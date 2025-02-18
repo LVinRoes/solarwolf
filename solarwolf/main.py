@@ -86,7 +86,7 @@ def gamemain(args):
     # opt 0: interner Calc aus, 1: interner Calc an, 2: interner Calc mit Konstanz
     ########################################################################################
     name = "Luca"
-    opt = 0
+    opt = 1
     if opt == 0:
         use_internal_calc = False
         const = False
@@ -104,9 +104,13 @@ def gamemain(args):
     previous_intensity_level = None
 
     intensity_log_data = []  
-    logging_start_time = time.time()
+    internal_log_data = []  
+    logging_start_time = time.time()    
+    last_internal_sample_time = logging_start_time
     last_sample_time = logging_start_time
-    file_generated = False  
+    file_generated_intensity = False
+    file_generated_internal = False
+
 
     while game.handler:
         numframes += 1
@@ -149,13 +153,33 @@ def gamemain(args):
 
         current_intensity_level = 1
 
+        current_time = time.time()
+        elapsed_time = current_time - logging_start_time
+
         if isinstance(game.handler, GamePlay) and use_internal_calc:
             print("alternative berechnung")
             if my_int_calc is None:
-                # Erzeuge Instanz des neuen Intensitätsrechners
                 my_int_calc = Intensity_calc_IS(game.handler)
             total_intensity = my_int_calc.calculate_total_intensity()
             current_intensity_level = my_int_calc.get_intensity_level(total_intensity, previous_intensity_level)
+
+            if elapsed_time <= 120 and (current_time - last_internal_sample_time) >= 2:
+                internal_log_data.append((
+                    elapsed_time,
+                    my_int_calc.num_shots,
+                    my_int_calc.num_guards,
+                    my_int_calc.num_asteroids,
+                    my_int_calc.num_powerups,
+                    my_int_calc.time_left,
+                    my_int_calc.turbo_active,
+                    my_int_calc.lives_left,
+                    my_int_calc.shield_active,
+                    my_int_calc.distance_to_nearest_projectile,
+                    my_int_calc.distance_score,
+                    my_int_calc.intensity_score,
+                    my_int_calc.normalized_intensity
+                ))
+                last_internal_sample_time = current_time
         else:
             my_int_calc = None
             image_intensity = screen_processor.process_screen()
@@ -176,14 +200,12 @@ def gamemain(args):
 
         previous_intensity_level = current_intensity_level
 
-        current_time = time.time()
-        elapsed_time = current_time - logging_start_time
-        # Nur für die ersten 3 Minuten (180 Sekunden) messen:
-        if elapsed_time <= 180 and (current_time - last_sample_time) >= 2:
-            intensity_log_data.append((elapsed_time, total_intensity))
+        # Nur für die ersten 2 Minuten (120 Sekunden) messen:
+        if elapsed_time <= 120 and (current_time - last_sample_time) >= 2:
+            intensity_log_data.append((elapsed_time, current_intensity_level))
             last_sample_time = current_time
 
-        if not file_generated and elapsed_time >= 180:
+        if not file_generated_intensity and elapsed_time >= 120:
             times = [t for (t, intensity) in intensity_log_data]
             intensities = [intensity for (t, intensity) in intensity_log_data]
             plt.figure()
@@ -191,7 +213,7 @@ def gamemain(args):
             plt.xlabel("Verstrichene Zeit (s)")
             plt.ylabel("Intensitätswert")
             plt.title("Intensitätsverlauf über 3 Minuten")
-            plt.xlim([0, 180])
+            plt.xlim([0, 120])
             plt.grid(True)
             
             log_folder = "studie_logging"
@@ -202,7 +224,74 @@ def gamemain(args):
             plt.savefig(filename)
             plt.close()
             logging.info("Intensitäts-Log wurde in '%s' gespeichert.", filename)
-            file_generated = True
+            file_generated_intensity = True
+
+        if use_internal_calc and not file_generated_internal and elapsed_time >= 120:
+            if internal_log_data:
+                times = [entry[0] for entry in internal_log_data]
+                num_shots = [entry[1] for entry in internal_log_data]
+                num_guards = [entry[2] for entry in internal_log_data]
+                num_asteroids = [entry[3] for entry in internal_log_data]
+                num_powerups = [entry[4] for entry in internal_log_data]
+                time_left = [entry[5] for entry in internal_log_data]
+                turbo_active = [entry[6] for entry in internal_log_data]
+                lives_left = [entry[7] for entry in internal_log_data]
+                shield_active = [entry[8] for entry in internal_log_data]
+                distance_to_proj = [entry[9] for entry in internal_log_data]
+                distance_score = [entry[10] for entry in internal_log_data]
+                intensity_score = [entry[11] for entry in internal_log_data]
+                normalized_intensity = [entry[12] for entry in internal_log_data]
+
+                plt.figure(figsize=(12, 10))
+
+                plt.subplot(3, 2, 1)
+                plt.plot(times, num_shots, marker='o')
+                plt.xlabel("Zeit (s)")
+                plt.ylabel("Schüsse")
+                plt.grid(True)
+
+                plt.subplot(3, 2, 2)
+                plt.plot(times, num_guards, marker='o', color='orange')
+                plt.xlabel("Zeit (s)")
+                plt.ylabel("Guards")
+                plt.grid(True)
+
+                plt.subplot(3, 2, 3)
+                plt.plot(times, num_asteroids, marker='o', color='green')
+                plt.xlabel("Zeit (s)")
+                plt.ylabel("Asteroiden")
+                plt.grid(True)
+
+                plt.subplot(3, 2, 4)
+                plt.plot(times, num_powerups, marker='o', color='red')
+                plt.xlabel("Zeit (s)")
+                plt.ylabel("Powerups")
+                plt.grid(True)
+
+                plt.subplot(3, 2, 5)
+                plt.plot(times, intensity_score, marker='o', color='purple')
+                plt.xlabel("Zeit (s)")
+                plt.ylabel("Intensity Score")
+                plt.grid(True)
+
+                plt.subplot(3, 2, 6)
+                plt.plot(times, normalized_intensity, marker='o', color='brown')
+                plt.xlabel("Zeit (s)")
+                plt.ylabel("Normalized Intensity")
+                plt.grid(True)
+
+                plt.suptitle("Interne Intensitätsvariablen über 3 Minuten")
+
+                log_folder = "studie_logging"
+                if not os.path.exists(log_folder):
+                    os.makedirs(log_folder)
+                filename = os.path.join(log_folder, f"{name}_{opt}_internal_log.png")
+                plt.savefig(filename)
+                plt.close()
+                logging.info("Interner Intensitäts-Log wurde in '%s' gespeichert.", filename)
+                file_generated_internal = True
+            # Zusätzlich kann der bereits existierende Plot für den gemessenen Intensitätsverlauf erstellt werden.
+
 
         while not pygame.display.get_active():
             pygame.time.wait(100)

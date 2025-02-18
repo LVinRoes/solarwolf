@@ -7,6 +7,19 @@ class Intensity_calc_IS:
         self.max_intensity = max_intensity
         self.smoothed_intensity = None
 
+        self.num_shots = 0
+        self.num_guards = 0
+        self.num_asteroids = 0
+        self.num_powerups = 0
+        self.time_left = 0
+        self.turbo_active = 0
+        self.lives_left = 0
+        self.shield_active = 0
+        self.distance_to_nearest_projectile = 0
+        self.distance_score = 0
+        self.intensity_score = 0
+        self.normalized_intensity = 0
+
     def calculate_intensity(self):
         weight_shots = 1.5
         weight_guards = 2.0
@@ -18,21 +31,21 @@ class Intensity_calc_IS:
         weight_shield = -2.0
 
         # Anzahl gegnerischer Schüsse
-        num_shots = len(self.gameplay.shotobjs)
+        self.num_shots = len(self.gameplay.shotobjs)
         # Aktive Gegner (Guards)
-        num_guards = sum(1 for g in self.gameplay.guardobjs if not g.dead and g.killed == 0)
+        self.num_guards = sum(1 for g in self.gameplay.guardobjs if not g.dead and g.killed == 0)
         # Asteroiden
-        num_asteroids = len(self.gameplay.asteroidobjs)
+        self.num_asteroids = len(self.gameplay.asteroidobjs)
         # Powerups
-        num_powerups = len(self.gameplay.powerupobjs)
+        self.num_powerups = len(self.gameplay.powerupobjs)
         # Verbleibende Zeit
-        time_left = game.timeleft if hasattr(game, 'timeleft') else 500.0
+        self.time_left = game.timeleft if hasattr(game, 'timeleft') else 500.0
         # Spieler-Turbo aktiv?
-        turbo_active = 1 if self.gameplay.player.turbo else 0
+        self.turbo_active = 1 if self.gameplay.player.turbo else 0
         # Verbleibende Leben
-        lives_left = self.gameplay.lives_left
+        self.lives_left = self.gameplay.lives_left
         # Schild aktiv?
-        shield_active = 1 if self.gameplay.player.shield else 0
+        self.shield_active = 1 if self.gameplay.player.shield else 0
 
         distance_to_nearest_projectile = float('inf')
         player_center = self.gameplay.player.rect.center
@@ -48,14 +61,14 @@ class Intensity_calc_IS:
         if distance_to_nearest_projectile == float('inf'):
             distance_to_nearest_projectile = 9999.0
 
-        intensity_score = (num_shots * weight_shots +
-                           num_guards * weight_guards +
-                           num_asteroids * weight_asteroids +
-                           num_powerups * weight_powerups +
-                           time_left * weight_time +
-                           turbo_active * weight_turbo +
-                           lives_left * weight_lives +
-                           shield_active * weight_shield)
+        intensity_score = (self.num_shots * weight_shots +
+                           self.num_guards * weight_guards +
+                           self.num_asteroids * weight_asteroids +
+                           self.num_powerups * weight_powerups +
+                           self.time_left * weight_time +
+                           self.turbo_active * weight_turbo +
+                           self.lives_left * weight_lives +
+                           self.shield_active * weight_shield)
 
         if intensity_score < 0:
             intensity_score = 0
@@ -95,9 +108,9 @@ class Intensity_calc_IS:
             current_level = 1
         elif smoothed_intensity < 0.25:
             current_level = 2
-        elif smoothed_intensity < 0.4:
+        elif smoothed_intensity < 0.38:
             current_level = 3
-        elif smoothed_intensity < 0.5:
+        elif smoothed_intensity < 0.48:
             current_level = 4
         else:
             current_level = 5

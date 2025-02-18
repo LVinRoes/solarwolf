@@ -51,6 +51,11 @@ translations_default = {
         K_j: DOWN,
         K_k: UP,
         K_l: RIGHT,
+        #wasd keys
+        K_w: UP,
+        K_s: DOWN,
+        K_a: LEFT,
+        K_d: RIGHT,
     },
     NOEVENT: {
 #        KEYDOWN: PRESS,

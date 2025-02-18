@@ -366,6 +366,7 @@ class MusicController:
                             result_instruments = list(old_instruments)
                             if random.random() < reduced_factor:
                                 result_instruments.append(self.rhythm_agent.crash)
+                                result_instruments.append(self.rhythm_agent.kick)
                             if random.random() < reduced_factor:
                                 print("Adding tom to fill")
                                 result_instruments.append(random.choice([
