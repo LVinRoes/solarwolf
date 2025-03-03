@@ -8,7 +8,7 @@ from io import StringIO
 
 
 #various data constants
-start_lives = 5
+start_lives = 10
 
 ship_fastspeed = 7
 ship_slowspeed = 5

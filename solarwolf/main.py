@@ -88,7 +88,7 @@ def gamemain(args):
 
 
     ########################################################################################
-    name = "Test"
+    name = "Herr Theilemann"
 
     game.player = Player(name=name, score=20)
     game.player.name = name
@@ -96,6 +96,7 @@ def gamemain(args):
     # In der main-Funktion, nach den Initialisierungen:
     level_seed = 2 # z.B. 0, 1 oder 2
     game.level_seed = level_seed
+    opt = 0
 
     # Für das Layout – also welche Levellayouts gewählt werden sollen:
     if level_seed == 0:
@@ -103,8 +104,7 @@ def gamemain(args):
     elif level_seed == 1:
         game.level_layout_sequence = [11, 28, 29, 1]
     elif level_seed == 2:
-        game.level_layout_sequence = [12, 30, 27, 2]
-    ##########################################################################################
+        game.level_layout_sequence = [12, 29, 27, 2]
 
     # Für den Schwierigkeitsgrad – so kannst du beispielsweise sicherstellen, dass auch der Schwierigkeitswert steigt:
     if level_seed == 0:
@@ -114,7 +114,6 @@ def gamemain(args):
     elif level_seed == 2:
         game.forced_difficulty_sequence = [12, 29, 27, 2]
 
-    opt = 2
     if opt == 0:
         use_internal_calc = False
         const = False

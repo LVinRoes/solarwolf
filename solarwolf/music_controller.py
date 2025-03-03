@@ -484,7 +484,7 @@ class MusicController:
         logger.debug(f"Updating music for intensity level {intensity}")
 
     def _update_volumes(self, intensity: int) -> None:
-        new_min = 0.7
+        new_min = 0.5
         new_max = 1.0
 
         def scale_vol(factor: float) -> float:
