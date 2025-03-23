@@ -9,17 +9,14 @@ import time
 from input_analyzer import InputAnalyzer
 from music_controller import *
 from solarwolf.screen_processor import ScreenProcessor
-import logging
 from intensity_calculator import IntensityCalculator
 from intensity_calc_IS import Intensity_calc_IS
 from gameplay import GamePlay
 from players import Player
 
-# Für das Plotten des Graphen
+# Für das Plotten des Graphen (wird nicht mehr verwendet)
 import matplotlib.pyplot as plt
 import os  # Wird benötigt, um den Ordner zu überprüfen/erstellen
-
-logging.basicConfig(level=logging.DEBUG)
 
 last_update_time = time.time()
 update_interval = 0.5  # in Sekunden
@@ -85,18 +82,16 @@ def gamemain(args):
 
     # Option für die Intensitätsberechnung:
     # opt 0: interner Calc aus, 1: interner Calc an, 2: interner Calc mit Konstanz
-
-
     ########################################################################################
-    name = "Herr Theilemann"
+    name = "id"
 
     game.player = Player(name=name, score=20)
     game.player.name = name
 
     # In der main-Funktion, nach den Initialisierungen:
-    level_seed = 2 # z.B. 0, 1 oder 2
+    level_seed = 0  # z.B. 0, 1 oder 2
     game.level_seed = level_seed
-    opt = 0
+    opt = 1
 
     # Für das Layout – also welche Levellayouts gewählt werden sollen:
     if level_seed == 0:
@@ -110,7 +105,7 @@ def gamemain(args):
     if level_seed == 0:
         game.forced_difficulty_sequence = [10, 27, 28, 0]
     elif level_seed == 1:
-        game.forced_difficulty_sequence = [11, 28, 29, 1]  # Beispielwerte: Level 10, dann 20, dann 30
+        game.forced_difficulty_sequence = [11, 28, 29, 1]
     elif level_seed == 2:
         game.forced_difficulty_sequence = [12, 29, 27, 2]
 
@@ -125,24 +120,14 @@ def gamemain(args):
         const = True
     ##########################################################################################
 
-
     intensity_calculator = IntensityCalculator()
     my_int_calc = None
     previous_intensity_level = None
 
-    intensity_log_data = []  
-    internal_log_data = []  
-    logging_start_time = time.time()    
-    last_internal_sample_time = logging_start_time
-    last_sample_time = logging_start_time
-    file_generated_intensity = False
-    file_generated_internal = False
-
-
     while game.handler:
         numframes += 1
         handler = game.handler
-        if handler != None and hasattr(handler, 'starting'):
+        if handler is not None and hasattr(handler, 'starting'):
             handler.starting()
         for event in pygame.event.get():
             if event.type == pygame.USEREVENT:
@@ -165,7 +150,7 @@ def gamemain(args):
                     gfx.switchfullscreen()
                     continue
             inputevent = input.translate(event)
-            if inputevent.normalized != None:
+            if inputevent.normalized is not None:
                 inputevent = input.exclusive((input.UP, input.DOWN, input.LEFT, input.RIGHT), inputevent)
                 handler.input(inputevent)
             elif event.type == pygame.QUIT:
@@ -178,35 +163,12 @@ def gamemain(args):
         game.clockticks = game.clock.tick(40)
         gfx.update()
 
-        current_intensity_level = 1
-
-        current_time = time.time()
-        elapsed_time = current_time - logging_start_time
-
+        # Intensitätsberechnung und Musiksteuerung
         if isinstance(game.handler, GamePlay) and use_internal_calc:
-            #print("alternative berechnung")
             if my_int_calc is None:
                 my_int_calc = Intensity_calc_IS(game.handler)
             total_intensity = my_int_calc.calculate_total_intensity()
             current_intensity_level = my_int_calc.get_intensity_level(total_intensity, previous_intensity_level)
-
-            if elapsed_time <= 120 and (current_time - last_internal_sample_time) >= 2:
-                internal_log_data.append((
-                    elapsed_time,
-                    my_int_calc.num_shots,
-                    my_int_calc.num_guards,
-                    my_int_calc.num_asteroids,
-                    my_int_calc.num_powerups,
-                    my_int_calc.time_left,
-                    my_int_calc.turbo_active,
-                    my_int_calc.lives_left,
-                    my_int_calc.shield_active,
-                    my_int_calc.distance_to_nearest_projectile,
-                    my_int_calc.distance_score,
-                    my_int_calc.intensity_score,
-                    my_int_calc.normalized_intensity
-                ))
-                last_internal_sample_time = current_time
         else:
             my_int_calc = None
             image_intensity = screen_processor.process_screen()
@@ -214,111 +176,17 @@ def gamemain(args):
             total_intensity = intensity_calculator.calculate_total_intensity(image_intensity, input_intensity)
             current_intensity_level = intensity_calculator.get_intensity_level(total_intensity)
         
-        # Musik entsprechend aktualisieren
+        # Musik entsprechend aktualisieren, wenn sich der Intensitätslevel ändert
         if current_intensity_level != previous_intensity_level:
             if const:
                 current_intensity_level = 3
             music_cont.update_music(current_intensity_level)
-            # Optional: Debug-Ausgabe
-            print(f"Image Intensity: {image_intensity}")
-            print(f"Input Intensity: {input_intensity}")
+            print(f"Image Intensity: {image_intensity if 'image_intensity' in locals() else 'n/a'}")
+            print(f"Input Intensity: {input_intensity if 'input_intensity' in locals() else 'n/a'}")
             print(f"Total Intensity (before smoothing): {total_intensity}")
             print(f"Smoothed Total Intensity: {current_intensity_level}")
 
         previous_intensity_level = current_intensity_level
-
-        # Nur für die ersten 2 Minuten (120 Sekunden) messen:
-        if elapsed_time <= 120 and (current_time - last_sample_time) >= 2:
-            intensity_log_data.append((elapsed_time, current_intensity_level))
-            last_sample_time = current_time
-
-        if not file_generated_intensity and elapsed_time >= 120:
-            times = [t for (t, intensity) in intensity_log_data]
-            intensities = [intensity for (t, intensity) in intensity_log_data]
-            plt.figure()
-            plt.plot(times, intensities, marker='o')
-            plt.xlabel("Verstrichene Zeit (s)")
-            plt.ylabel("Intensitätswert")
-            plt.title("Intensitätsverlauf über 3 Minuten")
-            plt.xlim([0, 120])
-            plt.grid(True)
-            
-            log_folder = "studie_logging"
-            if not os.path.exists(log_folder):
-                os.makedirs(log_folder)
-            
-            filename = os.path.join(log_folder, f"{name}_{opt}_log.png")
-            plt.savefig(filename)
-            plt.close()
-            logging.info("Intensitäts-Log wurde in '%s' gespeichert.", filename)
-            file_generated_intensity = True
-
-        if use_internal_calc and not file_generated_internal and elapsed_time >= 120:
-            if internal_log_data:
-                times = [entry[0] for entry in internal_log_data]
-                num_shots = [entry[1] for entry in internal_log_data]
-                num_guards = [entry[2] for entry in internal_log_data]
-                num_asteroids = [entry[3] for entry in internal_log_data]
-                num_powerups = [entry[4] for entry in internal_log_data]
-                time_left = [entry[5] for entry in internal_log_data]
-                turbo_active = [entry[6] for entry in internal_log_data]
-                lives_left = [entry[7] for entry in internal_log_data]
-                shield_active = [entry[8] for entry in internal_log_data]
-                distance_to_proj = [entry[9] for entry in internal_log_data]
-                distance_score = [entry[10] for entry in internal_log_data]
-                intensity_score = [entry[11] for entry in internal_log_data]
-                normalized_intensity = [entry[12] for entry in internal_log_data]
-
-                plt.figure(figsize=(12, 10))
-
-                plt.subplot(3, 2, 1)
-                plt.plot(times, num_shots, marker='o')
-                plt.xlabel("Zeit (s)")
-                plt.ylabel("Schüsse")
-                plt.grid(True)
-
-                plt.subplot(3, 2, 2)
-                plt.plot(times, num_guards, marker='o', color='orange')
-                plt.xlabel("Zeit (s)")
-                plt.ylabel("Guards")
-                plt.grid(True)
-
-                plt.subplot(3, 2, 3)
-                plt.plot(times, num_asteroids, marker='o', color='green')
-                plt.xlabel("Zeit (s)")
-                plt.ylabel("Asteroiden")
-                plt.grid(True)
-
-                plt.subplot(3, 2, 4)
-                plt.plot(times, num_powerups, marker='o', color='red')
-                plt.xlabel("Zeit (s)")
-                plt.ylabel("Powerups")
-                plt.grid(True)
-
-                plt.subplot(3, 2, 5)
-                plt.plot(times, intensity_score, marker='o', color='purple')
-                plt.xlabel("Zeit (s)")
-                plt.ylabel("Intensity Score")
-                plt.grid(True)
-
-                plt.subplot(3, 2, 6)
-                plt.plot(times, normalized_intensity, marker='o', color='brown')
-                plt.xlabel("Zeit (s)")
-                plt.ylabel("Normalized Intensity")
-                plt.grid(True)
-
-                plt.suptitle("Interne Intensitätsvariablen über 3 Minuten")
-
-                log_folder = "studie_logging"
-                if not os.path.exists(log_folder):
-                    os.makedirs(log_folder)
-                filename = os.path.join(log_folder, f"{name}_{opt}_internal_log.png")
-                plt.savefig(filename)
-                plt.close()
-                logging.info("Interner Intensitäts-Log wurde in '%s' gespeichert.", filename)
-                file_generated_internal = True
-            # Zusätzlich kann der bereits existierende Plot für den gemessenen Intensitätsverlauf erstellt werden.
-
 
         while not pygame.display.get_active():
             pygame.time.wait(100)
