@@ -86,24 +86,21 @@ class RhythmAgent:
             5: [
                 (
                     [
-                        ([self.open_hihat, self.kick, self.closed_hihat], 0.5), 
-                                                       
+                        ([self.open_hihat, self.kick,], 0.5), 
                         ([self.closed_hihat], 0.5),              
-                        ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),  
-                                                      
+                        ([self.closed_hihat, self.snare], 0.5),  
                         ([self.closed_hihat], 0.5),                
-                        ([self.closed_hihat, self.kick, self.closed_hihat], 0.5),  
-                                                       
+                        ([self.closed_hihat, self.kick], 0.5),  
                         ([self.closed_hihat], 0.5),               
-                        ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),  
+                        ([self.closed_hihat, self.snare], 0.5),  
                         ([self.closed_hihat], 0.5),                   
-                        ([self.closed_hihat, self.kick, self.closed_hihat], 0.5),  
+                        ([self.closed_hihat, self.kick], 0.5),  
                         ([self.closed_hihat], 0.5),                         
-                        ([self.closed_hihat, self.snare, self.closed_hihat], 0.5),  
+                        ([self.closed_hihat, self.snare], 0.5),  
                         ([self.closed_hihat], 0.5),                                
-                        ([self.closed_hihat, self.kick, self.closed_hihat], 0.5),  
+                        ([self.closed_hihat, self.kick], 0.5),  
                         ([self.closed_hihat], 0.5),                                
-                        ([self.closed_hihat, self.snare, self.closed_hihat, self.crash], 0.5),  
+                        ([self.closed_hihat, self.snare, self.crash], 0.5),  
                                                                    
                         ([self.closed_hihat], 0.5),     
                     ]   

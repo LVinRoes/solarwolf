@@ -9,14 +9,17 @@ import time
 from input_analyzer import InputAnalyzer
 from music_controller import *
 from solarwolf.screen_processor import ScreenProcessor
+import logging
 from intensity_calculator import IntensityCalculator
 from intensity_calc_IS import Intensity_calc_IS
 from gameplay import GamePlay
 from players import Player
 
-# Für das Plotten des Graphen (wird nicht mehr verwendet)
+# Für das Plotten des Graphen
 import matplotlib.pyplot as plt
 import os  # Wird benötigt, um den Ordner zu überprüfen/erstellen
+
+logging.basicConfig(level=logging.DEBUG)
 
 last_update_time = time.time()
 update_interval = 0.5  # in Sekunden
@@ -82,16 +85,18 @@ def gamemain(args):
 
     # Option für die Intensitätsberechnung:
     # opt 0: interner Calc aus, 1: interner Calc an, 2: interner Calc mit Konstanz
+
+
     ########################################################################################
-    name = "id"
+    name = "1"
 
     game.player = Player(name=name, score=20)
     game.player.name = name
 
     # In der main-Funktion, nach den Initialisierungen:
-    level_seed = 0  # z.B. 0, 1 oder 2
+    level_seed = 2 # z.B. 0, 1 oder 2
     game.level_seed = level_seed
-    opt = 1
+    opt = 2
 
     # Für das Layout – also welche Levellayouts gewählt werden sollen:
     if level_seed == 0:
@@ -105,7 +110,7 @@ def gamemain(args):
     if level_seed == 0:
         game.forced_difficulty_sequence = [10, 27, 28, 0]
     elif level_seed == 1:
-        game.forced_difficulty_sequence = [11, 28, 29, 1]
+        game.forced_difficulty_sequence = [11, 28, 29, 1]  # Beispielwerte: Level 10, dann 20, dann 30
     elif level_seed == 2:
         game.forced_difficulty_sequence = [12, 29, 27, 2]
 
@@ -120,6 +125,7 @@ def gamemain(args):
         const = True
     ##########################################################################################
 
+
     intensity_calculator = IntensityCalculator()
     my_int_calc = None
     previous_intensity_level = None
@@ -127,7 +133,7 @@ def gamemain(args):
     while game.handler:
         numframes += 1
         handler = game.handler
-        if handler is not None and hasattr(handler, 'starting'):
+        if handler != None and hasattr(handler, 'starting'):
             handler.starting()
         for event in pygame.event.get():
             if event.type == pygame.USEREVENT:
@@ -150,7 +156,7 @@ def gamemain(args):
                     gfx.switchfullscreen()
                     continue
             inputevent = input.translate(event)
-            if inputevent.normalized is not None:
+            if inputevent.normalized != None:
                 inputevent = input.exclusive((input.UP, input.DOWN, input.LEFT, input.RIGHT), inputevent)
                 handler.input(inputevent)
             elif event.type == pygame.QUIT:
@@ -163,26 +169,33 @@ def gamemain(args):
         game.clockticks = game.clock.tick(40)
         gfx.update()
 
-        # Intensitätsberechnung und Musiksteuerung
+        current_intensity_level = 1
+
+        current_time = time.time()
+
         if isinstance(game.handler, GamePlay) and use_internal_calc:
+            #print("alternative berechnung")
             if my_int_calc is None:
                 my_int_calc = Intensity_calc_IS(game.handler)
             total_intensity = my_int_calc.calculate_total_intensity()
             current_intensity_level = my_int_calc.get_intensity_level(total_intensity, previous_intensity_level)
+
         else:
             my_int_calc = None
             image_intensity = screen_processor.process_screen()
+            screen_processor.update_demo_capture()
             input_intensity = input_analyzer.get_input_intensity()
             total_intensity = intensity_calculator.calculate_total_intensity(image_intensity, input_intensity)
             current_intensity_level = intensity_calculator.get_intensity_level(total_intensity)
         
-        # Musik entsprechend aktualisieren, wenn sich der Intensitätslevel ändert
+        # Musik entsprechend aktualisieren
         if current_intensity_level != previous_intensity_level:
             if const:
                 current_intensity_level = 3
             music_cont.update_music(current_intensity_level)
-            print(f"Image Intensity: {image_intensity if 'image_intensity' in locals() else 'n/a'}")
-            print(f"Input Intensity: {input_intensity if 'input_intensity' in locals() else 'n/a'}")
+            # Optional: Debug-Ausgabe
+            print(f"Image Intensity: {image_intensity}")
+            print(f"Input Intensity: {input_intensity}")
             print(f"Total Intensity (before smoothing): {total_intensity}")
             print(f"Smoothed Total Intensity: {current_intensity_level}")
 

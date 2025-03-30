@@ -13,15 +13,11 @@ from bass_agent import BassAgent
 from harmony_helper import HarmonyHelper
 from harmony_agent import HarmonyAgent
 
-# Logging konfigurieren
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
 def intensity_to_dynamic(intensity_level: int) -> str:
-    """
-    Mapped eine Intensitätsstufe zu einer dynamischen Markierung.
-    """
     if intensity_level <= 1:
         return "pp"
     elif intensity_level == 2:
@@ -36,9 +32,6 @@ def intensity_to_dynamic(intensity_level: int) -> str:
 
 
 class MusicBuffer:
-    """
-    Verwaltet vor-generierte Musikdaten in Queues pro (Intensität, Instrument).
-    """
     def __init__(self, buffer_size: int = 2) -> None:
         self.buffer: Dict[str, Queue] = defaultdict(Queue)
         self.buffer_size = buffer_size
@@ -77,7 +70,7 @@ class MusicBuffer:
 
 class MusicController:
     def __init__(self) -> None:
-        self.session = Session(tempo=130)
+        self.session = Session(tempo=124)
         self.stop_flag = False
         self.current_intensity_level: int = 1
         self.counter: int = 0
@@ -91,7 +84,6 @@ class MusicController:
         self.rhythm_agent = RhythmAgent()
         self.harmony_agent = HarmonyAgent()
 
-        # self.current_progression entfällt jetzt
 
         self.key_offset = 0  
         self.transposition_chance = 0.2
@@ -107,8 +99,6 @@ class MusicController:
             "bass": 1.0
         }
 
-        # Die vordefinierten Akkordfolgen bleiben hier zur Notfall-/Fallback-Nutzung,
-        # werden aber beim neuen Ansatz über den HarmonyAgent nicht mehr direkt genutzt.
         self.intensity_chords: Dict[int, List[Tuple[str, List[int], float]]] = {
            1: [
                 ("Am", [65, 72, 76], 4.0),
@@ -143,7 +133,6 @@ class MusicController:
         self.buffer_threads: List[threading.Thread] = []
 
         self.update_music(self.current_intensity_level)
-        logger.debug("MusicController initialized.")
 
         # Starte Buffer-Generierung in separaten Threads
         self.start_buffer_generation()
@@ -163,11 +152,7 @@ class MusicController:
         self.bass_layer_instrument = self.session.new_part("Slap Bass 1")
 
     def start_buffer_generation(self) -> None:
-        """
-        Startet pro Intensitätslevel einen Thread, der kontinuierlich neue Musikdaten
-        generiert und in den Buffer legt.
-        """
-        logger.debug("Starting buffer generation threads...")
+       
         for level in range(1, 6):
             thread = threading.Thread(
                 target=self.generate_buffer_for_level,
@@ -178,9 +163,6 @@ class MusicController:
             self.buffer_threads.append(thread)
 
     def generate_buffer_for_level(self, level: int) -> None:
-        """
-        Generiert fortlaufend Musikdaten für das gegebene Intensitätslevel.
-        """
         while not self.stop_flag:
             # Generiere eine Progression und füge sie gleichzeitig in beide Queues ein:
             self._maybe_generate_progression(level)
@@ -190,11 +172,7 @@ class MusicController:
             time.sleep(0.1)
 
     def _maybe_generate_progression(self, level: int) -> None:
-        """
-        Generiert eine neue Progression (über den HarmonyAgent) und legt
-        sie in die Buffer-Queues für Drone und Bass, falls dort weniger als
-        die gewünschte Anzahl an Einträgen vorhanden ist.
-        """
+        
         key_drone = f"{level}_drone"
         key_bass = f"{level}_bass"
         if (self.music_buffer.buffer[key_drone].qsize() < self.music_buffer.buffer_size or 
@@ -246,9 +224,6 @@ class MusicController:
             self.high_intensity_start_time_transposition = self.session.beat()
 
     def _toggle_transposition(self) -> None:
-        """
-        Wechselt zwischen Originaltonart (0) und +2 Halbtöne.
-        """
         if not self.transposed:
             self.key_offset = 2  
             self.transposed = True
@@ -260,19 +235,27 @@ class MusicController:
         self.tonart_switch_just_happened = True
 
     def run_scamp(self) -> None:
-        """
-        Startet die SCAMP-Forks für die einzelnen Layer und wartet, bis sie beendet werden.
-        """
-        logger.debug("Starting musical processes")
+        perf = self.session.start_transcribing()
         self.session.fork(self.play_drone)
         self.session.fork(self.play_drums)
         self.session.fork(self.play_melody)
         self.session.fork(self.play_extra)
         self.session.fork(self.play_bass)
-        logger.debug("All musical processes forked.")
 
         self.session.wait_for_children_to_finish()
-        logger.debug("All musical processes finished.")
+
+        perf = self.session.stop_transcribing()
+        score = perf.to_score().show()
+        ly_code = score.to_lilypond()
+        import os
+        pfad = r"D:\BA-Arbeit2\output_score.ly"
+        os.makedirs(os.path.dirname(pfad), exist_ok=True)
+
+        with open(pfad, "w", encoding="utf-8") as f:
+            f.write(ly_code)
+
+
+        print("LilyPond-Datei 'output_score.ly' wurde erstellt.")
 
     def play_bass(self) -> None:
         while not self.stop_flag:
@@ -290,21 +273,12 @@ class MusicController:
                         break
                     transposed_pitch = p + self.key_offset
                     vol = self.layer_volumes["bass"]
-                    if level < 3:
-                        self.bass_instrument.play_note(
-                            pitch=transposed_pitch,
-                            length=d,
-                            volume=vol,
-                            properties=dynamic
-                        )
-                    else:
-                        chord = [transposed_pitch, transposed_pitch + 12]
-                        self.bass_instrument.play_chord(
-                            chord,
-                            length=d,
-                            volume=vol,
-                            properties=dynamic
-                        )
+                    self.bass_instrument.play_note(
+                        pitch=transposed_pitch,
+                        length=d,
+                        volume=vol,
+                        properties=dynamic
+                    )
 
     def play_drone(self) -> None:
         while not self.stop_flag:
@@ -384,7 +358,6 @@ class MusicController:
                             result_instruments,
                             length=dur,
                             volume=vol-0.1,
-                            properties=dynamic
                         )
                     else:
                         self.drum_instrument.play_chord([32, 31], length=dur, volume=0)
@@ -414,7 +387,7 @@ class MusicController:
                 time_in_high = self.session.beat() - self.high_intensity_start_time_harmony
                 if time_in_high >= 16:
                     do_harmony = random.random() < 0.5
-                    logger.debug(">>> Harmonien (Terzen) werden gespielt." if do_harmony else ">>> Keine Harmonien diesmal.")
+                    logger.debug(">>> Harmonien werden gespielt." if do_harmony else ">>> Keine Harmonien diesmal.")
                     self.high_intensity_start_time_harmony = self.session.beat()
 
             if self.tonart_switch_just_happened:
@@ -434,7 +407,7 @@ class MusicController:
                         third = self.harmony_helper.get_third_above_in_scale(pitch) + self.key_offset
                         chord.extend([third, third - 12])
                     instrument = self.melody_layer_instrument if level >= 4 else self.melody_instrument
-                    instrument.play_chord(chord, length=dur, volume=vol-0.2, properties=dynamic)
+                    instrument.play_chord(chord, length=dur, volume=vol-0.25, properties=dynamic)
                 if self.tonart_switch_just_happened:
                     self.tonart_switch_just_happened = False
 
@@ -468,9 +441,6 @@ class MusicController:
                         )
 
     def update_music(self, intensity_level: float) -> None:
-        """
-        Aktualisiert Intensität, passt Volumes und Tempo an.
-        """
         intensity = max(1, min(5, int(round(intensity_level))))
         if intensity >= 4 and not hasattr(self, "high_intensity_start_time"):
             self.high_intensity_start_time = self.session.beat()

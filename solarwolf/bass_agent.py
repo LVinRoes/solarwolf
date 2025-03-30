@@ -75,17 +75,3 @@ class BassAgent:
             if idx > 0:
                 return sorted_scale[idx - 1]
         return current
-
-# Beispielhafte Verwendung:
-if __name__ == "__main__":
-    agent = BassAgent()
-    # Beispiel-Progression: Liste von (Akkordname, Akkordtöne, Dauer in Sekunden)
-    progression = [
-        ("Am7", None, 3.0),
-        ("Dm7", None, 2.5),
-        ("Em7", None, 3.0),
-        ("Cmaj7", None, 2.0)
-    ]
-    pitches, durations = agent.generate_bass_line_for_progression(progression, intensity_level=3)
-    print("Pitches:", pitches)
-    print("Durations:", durations)
