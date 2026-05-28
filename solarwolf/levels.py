@@ -39,10 +39,10 @@ def makelevel_with_forced_values(layout_index, difficulty):
     "Returns (list, startcenter, msg, numboxes) for the given level using forced layout and difficulty."
     if not initialized:
         init()
-    # Wähle das Layout anhand des layout_index:
+    # Select the layout based on layout_index:
     lev = Levels[layout_index % len(Levels)]
     
-    # Berechne den Schwierigkeitsfaktor anhand des difficulty-Werts:
+    # Calculate the difficulty factor based on the difficulty value:
     touches = difficulty // len(Levels) + 1
     
     boxlist = []
@@ -50,7 +50,7 @@ def makelevel_with_forced_values(layout_index, difficulty):
     corner = (106, 106)
     startpos = (corner[0] + 236, corner[1] + 182)
     pos = [corner[0], corner[1]]
-    numboxes = difficulty // 2  # Beispiel: Hier kannst du die Formel anpassen
+    numboxes = difficulty // 2  # Example: adjust the formula here as needed
     
     for row in lev[2:]:
         cells = list(row)
@@ -79,10 +79,10 @@ def makelevel(level):
     "returns (list, startcenter) level number"
     if not initialized: init()
 
-    # Prüfe, ob eine Levelsequenz vorgegeben wurde:
+    # Check whether a level sequence has been specified:
     if hasattr(game, "level_sequence") and game.level_sequence:
-        # Wenn der aktuelle Levelzähler größer als die Sequenz ist,
-        # kann man entweder modulo nehmen oder ab einer bestimmten Stufe enden.
+        # If the current level counter exceeds the sequence length,
+        # either use modulo or stop at a certain point.
         forced_index = game.level_sequence[level % len(game.level_sequence)]
     else:
         forced_index = level % len(Levels)

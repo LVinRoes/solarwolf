@@ -90,8 +90,8 @@ def playmusic(musicname, volume=1.0):
             music.play(-1)
             music.set_volume(prefvolume*CurrentVolume)
         except pygame.error as e:
-            print(f"Fehler beim Laden oder Abspielen der Musik: {e}")
-            pass  # Fehler ignorieren, wenn Musikdatei nicht gefunden wird
+            print(f"Error loading or playing music: {e}")
+            pass  # Ignore error if music file is not found
     return
 
 
@@ -118,7 +118,7 @@ def tweakmusicvolume():
             try:
                 music.play(-1)
             except pygame.error as e:
-                print(f"Fehler beim Abspielen der Musik: {e}")
-                pass  # Fehler ignorieren, wenn Musik nicht geladen ist
+                print(f"Error playing music: {e}")
+                pass  # Ignore error if music is not loaded
         music.set_volume(prefvolume*CurrentVolume)
     return

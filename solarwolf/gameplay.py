@@ -234,6 +234,7 @@ class GamePlay:
             self.powerupcount += 0.3
             baddy = random.choice(self.guardobjs)
             baddy.fire() #only requests a shot
+
         for baddy in self.guardobjs:
             shotspot, shotdir = baddy.shotinfo()
             if shotspot:
@@ -425,28 +426,28 @@ class GamePlay:
         self.skipping = game.timeleft > 0.0
         self.levelnum += 1
 
-        # Falls eine forced difficulty sequence gesetzt ist, nimm den entsprechenden Schwierigkeitswert.
+        # If a forced difficulty sequence is set, use the corresponding difficulty value.
         if hasattr(game, "forced_difficulty_sequence") and game.forced_difficulty_sequence:
-            # Beachte: Falls die Sequenz kürzer ist als die Anzahl der gespielten Level,
-            # kannst du modulo verwenden, oder aber die Sequenz einmalig abspielen.
+            # Note: if the sequence is shorter than the number of levels played,
+            # you can use modulo, or play through the sequence only once.
             difficulty = game.forced_difficulty_sequence[(self.levelnum - 1) % len(game.forced_difficulty_sequence)]
         else:
             difficulty = self.levelnum
 
         self.difficulty = difficulty
 
-        # Gleichzeitig soll das Layout aus der forced layout sequence entnommen werden:
+        # At the same time, the layout should be taken from the forced layout sequence:
         if hasattr(game, "level_layout_sequence") and game.level_layout_sequence:
             layout_index = game.level_layout_sequence[(self.levelnum - 1) % len(game.level_layout_sequence)]
         else:
             layout_index = self.levelnum % len(levels.Levels)
 
-        # Jetzt wird das Levellayout anhand des layout_index gewählt, aber der difficulty-Wert wird für die
-        # Schwierigkeitsberechnungen (z. B. touches) genutzt:
+        # The level layout is now selected based on layout_index, but the difficulty value is used for
+        # difficulty calculations (e.g. touches):
         self.newboxes, self.startpos, msg, num = levels.makelevel_with_forced_values(layout_index, difficulty)
         
-        # Falls du die originale Funktion nicht ändern möchtest, könntest du
-        # auch in levels.makelevel() beide Werte übergeben – oder dort eine Unterscheidung einbauen.
+        # If you don't want to modify the original function, you could also
+        # pass both values into levels.makelevel() – or add a distinction there.
         
         random.shuffle(self.newboxes)
         self.calcboxes = num
@@ -461,7 +462,7 @@ class GamePlay:
         for b in self.guardobjs:
             b.nofire()
 
-        # Update des Spielerfortschritts – hier wird der Schwierigkeitswert übernommen:
+        # Update player progress – the difficulty value is applied here:
         if difficulty > game.player.score:
             game.player.score = difficulty
 
@@ -477,7 +478,7 @@ class GamePlay:
         if self.skipping:
             self.skiptime = 20
 
-        # Restlicher Code für Teleportation, Guards, Spikes etc. bleibt unverändert:
+        # Remaining code for teleportation, guards, spikes etc. stays unchanged:
         for g in self.guardobjs:
             if g.killed == 1:
                 self.smokeobjs.append(objguard.TeleGuard(g))
@@ -717,6 +718,3 @@ class GamePlay:
                 nexthandler = gamename.GameName(nexthandler)
 
         game.handler = nexthandler
-
-
-
