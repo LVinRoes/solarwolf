@@ -4,7 +4,7 @@ import threading
 import tkinter as tk
 from tkinter import ttk
 from scamp import instruments
-from music_controller import MusicController
+from adaptive_music.music_controller import MusicController
 
 class MusicGUI:
     def __init__(self, root):
@@ -38,7 +38,10 @@ class MusicGUI:
         print("[GUI] Process finished cleanly.")
         self.stop_button.config(state="disabled")
 
-if __name__ == "__main__":
+def main():    
     root = tk.Tk()
     app = MusicGUI(root)
     root.mainloop()
+
+if __name__ == "__main__":
+    main()

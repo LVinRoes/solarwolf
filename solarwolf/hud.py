@@ -2,7 +2,8 @@
 
 import pygame
 from pygame.locals import *
-import game, gfx, txt, score
+import game, gfx, txt
+import adaptive_music.score as score
 
 
 hudimage = None

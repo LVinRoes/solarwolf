@@ -8,7 +8,7 @@
 modules_string = """
 game, gameplay, gamemenu, gamename, gamestart, gamesetup, gamewin,
 gamehelp, gamepause, gamepref,
-gfx, snd, txt, hud, levels, main, input, score,
+gfx, snd, txt, hud, levels, main, input, adaptive_music.score,
 objbox, objexplode, objguard, objpopshot, objtele,
 objship, objshot, objsmoke, objtext, objwarp, stars, objpowerup, objasteroid
 """

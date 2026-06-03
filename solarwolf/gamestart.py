@@ -7,7 +7,7 @@ import game
 import gfx, txt, snd
 import input
 import players
-import score
+import adaptive_music.score as score
 import gameplay
 import levels
 
@@ -293,13 +293,13 @@ class GameStart:
             if not p:
                 p = players.Player('')
             else:
-                # Setze den Fortschritt zurück:
+                # Reset progress:
                 p.score = 0
                 p.lives = 0
                 p.skips = 0
                 p.cheater = 0
-                # Falls du noch weitere Attribute nutzt (z. B. einen aktuellen Levelzähler),
-                # setze diese hier ebenfalls zurück.
+                # If you use any additional attributes (e.g. a current level counter),
+                # reset them here as well.
             global lastplayer
             lastplayer = p
             game.player = p
@@ -312,6 +312,3 @@ class GameStart:
             self.buildlist()
             self.current = [0, 0]
             self.moveto((120, 110))
-
-
-

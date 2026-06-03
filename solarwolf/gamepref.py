@@ -5,7 +5,7 @@ from pygame.locals import *
 import game
 import gfx, snd, txt
 import input
-import score
+import adaptive_music.score as score
 import gameplay
 
 

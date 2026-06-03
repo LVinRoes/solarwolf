@@ -3,12 +3,9 @@ from setuptools import setup, find_packages
 setup(
     name='solarwolf',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        #'Development Status :: 4 - Beta',
         'License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
@@ -29,7 +26,7 @@ setup(
     packages=find_packages(),
     # package_data={'solarwolf': []},
     url='https://github.com/pygame/solarwolf',
-    install_requires=['pygame'],
+    install_requires=['pygame', 'scamp', 'matplotlib'],
     version='1.6.0',
     entry_points={
         'console_scripts': [
